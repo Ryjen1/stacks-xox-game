@@ -125,6 +125,23 @@ export async function createNewGame(
   return txOptions;
 }
 
+export async function createRematchGame(
+  originalGame: Game,
+  moveIndex: number,
+  move: Move
+) {
+  // Create a new game with the same bet amount but swap player positions
+  const betAmount = originalGame["bet-amount"];
+  const txOptions = {
+    contractAddress: CONTRACT_ADDRESS,
+    contractName: CONTRACT_NAME,
+    functionName: "create-game",
+    functionArgs: [uintCV(betAmount), uintCV(moveIndex), uintCV(move)],
+  };
+
+  return txOptions;
+}
+
 export async function joinGame(gameId: number, moveIndex: number, move: Move) {
   const txOptions = {
     contractAddress: CONTRACT_ADDRESS,
