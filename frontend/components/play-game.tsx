@@ -12,11 +12,12 @@ interface PlayGameProps {
 }
 
 export function PlayGame({ game }: PlayGameProps) {
-  const { userData, handleJoinGame, handlePlayGame, handleRematchGame } = useStacks();
+  const { userData, handleJoinGame, handlePlayGame, handleRematchGame, handleAcceptRematch } = useStacks();
   const [board, setBoard] = useState(game.board);
   const [playedMoveIndex, setPlayedMoveIndex] = useState(-1);
   const [rematchRequested, setRematchRequested] = useState(false);
   const [opponentAcceptedRematch, setOpponentAcceptedRematch] = useState(false);
+  const [newGameId, setNewGameId] = useState<number | null>(null);
   if (!userData) return null;
 
   const isPlayerOne =
@@ -132,7 +133,7 @@ export function PlayGame({ game }: PlayGameProps) {
         <div className="mt-4 p-4 border rounded-lg">
           <h3 className="font-semibold mb-2">Game Over!</h3>
 
-          {!rematchRequested && !opponentAcceptedRematch && (
+          {!rematchRequested && !opponentAcceptedRematch && newGameId === null && (
             <button
               onClick={() => {
                 setRematchRequested(true);
@@ -147,15 +148,43 @@ export function PlayGame({ game }: PlayGameProps) {
             </button>
           )}
 
-          {rematchRequested && !opponentAcceptedRematch && (
-            <div className="text-blue-500">Waiting for opponent to accept rematch...</div>
+          {rematchRequested && !opponentAcceptedRematch && newGameId === null && (
+            <div className="text-blue-500">
+              Waiting for opponent to accept rematch...
+              <div className="mt-2">
+                <button
+                  onClick={() => {
+                    // Simulate opponent accepting the rematch
+                    setOpponentAcceptedRematch(true);
+                    // In a real app, this would come from a contract event
+                    // For now, we'll simulate creating a new game ID
+                    const simulatedNewGameId = Math.floor(Math.random() * 1000);
+                    setNewGameId(simulatedNewGameId);
+                  }}
+                  className="bg-blue-500 text-white px-3 py-1 rounded text-sm mt-2"
+                >
+                  [DEV] Simulate Opponent Accept
+                </button>
+              </div>
+            </div>
           )}
 
-          {opponentAcceptedRematch && (
+          {newGameId && (
             <div className="text-green-500">
-              Opponent accepted! Starting new game with same bet amount...
-              <div className="mt-2 text-sm">
-                {isPlayerOne ? "You will play as O" : "You will play as X"} this time
+              <p className="font-medium">Rematch started! Game ID: {newGameId}</p>
+              <p className="text-sm mt-1">
+                Same bet amount: {formatStx(game["bet-amount"])} STX
+              </p>
+              <p className="text-sm mt-1">
+                {isPlayerOne ? "You are now playing as O" : "You are now playing as X"}
+              </p>
+              <div className="mt-3">
+                <Link
+                  href={`/game/${newGameId}`}
+                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 inline-block"
+                >
+                  Go to New Game
+                </Link>
               </div>
             </div>
           )}

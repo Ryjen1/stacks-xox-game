@@ -132,11 +132,38 @@ export async function createRematchGame(
 ) {
   // Create a new game with the same bet amount but swap player positions
   const betAmount = originalGame["bet-amount"];
+
+  // Validate that this is a valid rematch scenario
+  if (!originalGame.winner) {
+    throw new Error("Game must be completed before creating a rematch");
+  }
+
+  // Ensure same bet amount is used
+  if (betAmount <= 0) {
+    throw new Error("Invalid bet amount for rematch");
+  }
+
   const txOptions = {
     contractAddress: CONTRACT_ADDRESS,
     contractName: CONTRACT_NAME,
     functionName: "create-game",
     functionArgs: [uintCV(betAmount), uintCV(moveIndex), uintCV(move)],
+  };
+
+  return txOptions;
+}
+
+export async function acceptRematchGame(
+  gameId: number,
+  moveIndex: number,
+  move: Move
+) {
+  // This would be called by the second player to join the rematch game
+  const txOptions = {
+    contractAddress: CONTRACT_ADDRESS,
+    contractName: CONTRACT_NAME,
+    functionName: "join-game",
+    functionArgs: [uintCV(gameId), uintCV(moveIndex), uintCV(move)],
   };
 
   return txOptions;
