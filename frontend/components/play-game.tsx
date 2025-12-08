@@ -5,16 +5,19 @@ import { GameBoard } from "./game-board";
 import { abbreviateAddress, explorerAddress, formatStx } from "@/lib/stx-utils";
 import Link from "next/link";
 import { useStacks } from "@/hooks/use-stacks";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface PlayGameProps {
   game: Game;
 }
 
 export function PlayGame({ game }: PlayGameProps) {
-  const { userData, handleJoinGame, handlePlayGame } = useStacks();
+  const { userData, handleJoinGame, handlePlayGame, handleRematchGame, handleAcceptRematch } = useStacks();
   const [board, setBoard] = useState(game.board);
   const [playedMoveIndex, setPlayedMoveIndex] = useState(-1);
+  const [rematchRequested, setRematchRequested] = useState(false);
+  const [opponentAcceptedRematch, setOpponentAcceptedRematch] = useState(false);
+  const [newGameId, setNewGameId] = useState<number | null>(null);
   if (!userData) return null;
 
   const isPlayerOne =
@@ -29,6 +32,17 @@ export function PlayGame({ game }: PlayGameProps) {
     (game["is-player-one-turn"] && isPlayerOne) ||
     (!game["is-player-one-turn"] && isPlayerTwo);
   const isGameOver = game.winner !== null;
+
+  // Simulate opponent rematch acceptance (in a real app, this would come from contract events)
+  useEffect(() => {
+    if (rematchRequested) {
+      const timer = setTimeout(() => {
+        setOpponentAcceptedRematch(true);
+      }, 3000); // Simulate 3 second delay for opponent response
+
+      return () => clearTimeout(timer);
+    }
+  }, [rematchRequested]);
 
   function onCellClick(index: number) {
     const tempBoard = [...game.board];
@@ -112,6 +126,72 @@ export function PlayGame({ game }: PlayGameProps) {
 
       {isJoinedAlready && !isMyTurn && !isGameOver && (
         <div className="text-gray-500">Waiting for opponent to play...</div>
+      )}
+
+      {/* Rematch functionality - show after game ends */}
+      {isGameOver && (
+        <div className="mt-4 p-4 border rounded-lg">
+          <h3 className="font-semibold mb-2">Game Over!</h3>
+
+          {!rematchRequested && !opponentAcceptedRematch && newGameId === null && (
+            <button
+              onClick={() => {
+                setRematchRequested(true);
+                // Start a new game with same bet amount but swap player positions
+                // Player who was O becomes X, and vice versa
+                const newMove = isPlayerOne ? Move.O : Move.X;
+                handleRematchGame(game, 0, newMove); // Start with empty board
+              }}
+              className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+            >
+              Request Rematch
+            </button>
+          )}
+
+          {rematchRequested && !opponentAcceptedRematch && newGameId === null && (
+            <div className="text-blue-500">
+              Waiting for opponent to accept rematch...
+              <div className="mt-2">
+                <button
+                  onClick={() => {
+                    // Simulate opponent accepting the rematch
+                    setOpponentAcceptedRematch(true);
+                    // In a real app, this would come from a contract event
+                    // For now, we'll simulate creating a new game ID
+                    const simulatedNewGameId = Math.floor(Math.random() * 1000);
+                    setNewGameId(simulatedNewGameId);
+                  }}
+                  className="bg-blue-500 text-white px-3 py-1 rounded text-sm mt-2"
+                >
+                  [DEV] Simulate Opponent Accept
+                </button>
+              </div>
+            </div>
+          )}
+
+          {newGameId && (
+            <div className="text-green-500">
+              <p className="font-medium">✅ Rematch started! Game ID: {newGameId}</p>
+              <p className="text-sm mt-1">
+                💰 Same bet amount: {formatStx(game["bet-amount"])} STX
+              </p>
+              <p className="text-sm mt-1">
+                🎮 {isPlayerOne ? "You are now playing as O" : "You are now playing as X"}
+              </p>
+              <p className="text-xs mt-1 text-gray-600">
+                🔄 Player positions swapped from original game
+              </p>
+              <div className="mt-3">
+                <Link
+                  href={`/game/${newGameId}`}
+                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 inline-block"
+                >
+                  🚀 Go to New Game
+                </Link>
+              </div>
+            </div>
+          )}
+        </div>
       )}
     </div>
   );

@@ -1,4 +1,4 @@
-import { createNewGame, joinGame, Move, play } from "@/lib/contract";
+import { createNewGame, createRematchGame, acceptRematchGame, joinGame, Move, play, Game } from "@/lib/contract";
 import { getStxBalance } from "@/lib/stx-utils";
 import {
   AppConfig,
@@ -142,6 +142,58 @@ export function useStacks() {
     }
   }, [userData]);
 
+  async function handleRematchGame(
+    originalGame: Game,
+    moveIndex: number,
+    move: Move
+  ) {
+    if (typeof window === "undefined") return;
+
+    try {
+      if (!userData) throw new Error("User not connected");
+      const txOptions = await createRematchGame(originalGame, moveIndex, move);
+      await openContractCall({
+        ...txOptions,
+        appDetails,
+        onFinish: (data) => {
+          console.log(data);
+          window.alert("Sent rematch game transaction");
+        },
+        postConditionMode: PostConditionMode.Allow,
+      });
+    } catch (_err) {
+      const err = _err as Error;
+      console.error(err);
+      window.alert(err.message);
+    }
+  }
+
+  async function handleAcceptRematch(
+    gameId: number,
+    moveIndex: number,
+    move: Move
+  ) {
+    if (typeof window === "undefined") return;
+
+    try {
+      if (!userData) throw new Error("User not connected");
+      const txOptions = await acceptRematchGame(gameId, moveIndex, move);
+      await openContractCall({
+        ...txOptions,
+        appDetails,
+        onFinish: (data) => {
+          console.log(data);
+          window.alert("Accepted rematch game");
+        },
+        postConditionMode: PostConditionMode.Allow,
+      });
+    } catch (_err) {
+      const err = _err as Error;
+      console.error(err);
+      window.alert(err.message);
+    }
+  }
+
   return {
     userData,
     stxBalance,
@@ -150,5 +202,7 @@ export function useStacks() {
     handleCreateGame,
     handleJoinGame,
     handlePlayGame,
+    handleRematchGame,
+    handleAcceptRematch,
   };
 }
