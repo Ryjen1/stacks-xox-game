@@ -171,19 +171,22 @@ export function PlayGame({ game }: PlayGameProps) {
 
           {newGameId && (
             <div className="text-green-500">
-              <p className="font-medium">Rematch started! Game ID: {newGameId}</p>
+              <p className="font-medium">✅ Rematch started! Game ID: {newGameId}</p>
               <p className="text-sm mt-1">
-                Same bet amount: {formatStx(game["bet-amount"])} STX
+                💰 Same bet amount: {formatStx(game["bet-amount"])} STX
               </p>
               <p className="text-sm mt-1">
-                {isPlayerOne ? "You are now playing as O" : "You are now playing as X"}
+                🎮 {isPlayerOne ? "You are now playing as O" : "You are now playing as X"}
+              </p>
+              <p className="text-xs mt-1 text-gray-600">
+                🔄 Player positions swapped from original game
               </p>
               <div className="mt-3">
                 <Link
                   href={`/game/${newGameId}`}
                   className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 inline-block"
                 >
-                  Go to New Game
+                  🚀 Go to New Game
                 </Link>
               </div>
             </div>
