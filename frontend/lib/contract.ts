@@ -33,6 +33,13 @@ export type Game = {
   winner: string | null;
 };
 
+export type PlayerStats = {
+  wins: number;
+  losses: number;
+  stxWon: number;
+  gamesPlayed: number;
+};
+
 export enum Move {
   EMPTY = 0,
   X = 1,
@@ -103,7 +110,7 @@ export async function getGame(gameId: number) {
         : null,
     "is-player-one-turn": cvToValue(gameCV["is-player-one-turn"]),
     "bet-amount": parseInt(gameCV["bet-amount"].value.toString()),
-    board: gameCV["board"].value.map((cell) => parseInt(cell.value.toString())),
+    board: gameCV["board"].value.map((cell: UIntCV) => parseInt(cell.value.toString())),
     winner:
       gameCV["winner"].type === "some" ? gameCV["winner"].value.value : null,
   };
@@ -189,4 +196,70 @@ export async function play(gameId: number, moveIndex: number, move: Move) {
   };
 
   return txOptions;
+}
+
+export async function getPlayerStats(playerAddress: string): Promise<PlayerStats | null> {
+  const playerStatsCV = await fetchCallReadOnlyFunction({
+    contractAddress: CONTRACT_ADDRESS,
+    contractName: CONTRACT_NAME,
+    functionName: "get-player-stats",
+    functionArgs: [PrincipalCV.fromString(playerAddress)],
+    senderAddress: CONTRACT_ADDRESS,
+    network: STACKS_TESTNET,
+  });
+
+  const responseCV = playerStatsCV as OptionalCV<TupleCV<{
+    wins: UIntCV;
+    losses: UIntCV;
+    "stx-won": UIntCV;
+    "games-played": UIntCV;
+  }>>;
+
+  if (responseCV.type === "none") return null;
+
+  if (responseCV.value.type !== "tuple") return null;
+
+  const statsCV = responseCV.value.value;
+
+  return {
+    wins: parseInt(statsCV.wins.value.toString()),
+    losses: parseInt(statsCV.losses.value.toString()),
+    stxWon: parseInt(statsCV["stx-won"].value.toString()),
+    gamesPlayed: parseInt(statsCV["games-played"].value.toString()),
+  };
+}
+
+export async function getAllPlayerStats(): Promise<PlayerStats[]> {
+  const allStatsCV = await fetchCallReadOnlyFunction({
+    contractAddress: CONTRACT_ADDRESS,
+    contractName: CONTRACT_NAME,
+    functionName: "get-all-player-stats",
+    functionArgs: [],
+    senderAddress: CONTRACT_ADDRESS,
+    network: STACKS_TESTNET,
+  });
+
+  const responseCV = allStatsCV as ListCV<TupleCV<{
+    wins: UIntCV;
+    losses: UIntCV;
+    "stx-won": UIntCV;
+    "games-played": UIntCV;
+  }>>;
+
+  if (responseCV.type !== "list") return [];
+
+  return responseCV.value.map((statsCV: TupleCV<{
+    wins: UIntCV;
+    losses: UIntCV;
+    "stx-won": UIntCV;
+    "games-played": UIntCV;
+  }>) => {
+    const stats = statsCV.value;
+    return {
+      wins: parseInt(stats.wins.value.toString()),
+      losses: parseInt(stats.losses.value.toString()),
+      stxWon: parseInt(stats["stx-won"].value.toString()),
+      gamesPlayed: parseInt(stats["games-played"].value.toString()),
+    };
+  });
 }

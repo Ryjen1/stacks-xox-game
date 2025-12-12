@@ -170,3 +170,124 @@ describe("Tic Tac Toe Tests", () => {
     );
   });
 });
+
+describe("Player Statistics Tests", () => {
+  it("initializes player stats when a player wins", () => {
+    createGame(100, 0, 1, alice);
+    joinGame(3, 2, bob);
+    play(1, 1, alice);
+    play(4, 2, bob);
+    play(2, 1, alice); // Alice wins
+
+    // Check Alice's stats
+    const aliceStats = simnet.getMapEntry("stacks-xox-game", "player-stats", Cl.principal(alice));
+    expect(aliceStats).toBeSome(
+      Cl.tuple({
+        wins: Cl.uint(1),
+        losses: Cl.uint(0),
+        "stx-won": Cl.uint(200), // 2 * bet amount
+        "games-played": Cl.uint(1)
+      })
+    );
+
+    // Check Bob's stats
+    const bobStats = simnet.getMapEntry("stacks-xox-game", "player-stats", Cl.principal(bob));
+    expect(bobStats).toBeSome(
+      Cl.tuple({
+        wins: Cl.uint(0),
+        losses: Cl.uint(1),
+        "stx-won": Cl.uint(0),
+        "games-played": Cl.uint(1)
+      })
+    );
+  });
+
+  it("updates player stats correctly for multiple games", () => {
+    // First game - Alice wins
+    createGame(100, 0, 1, alice);
+    joinGame(3, 2, bob);
+    play(1, 1, alice);
+    play(4, 2, bob);
+    play(2, 1, alice);
+
+    // Second game - Bob wins
+    createGame(100, 0, 1, alice);
+    joinGame(3, 2, bob);
+    play(1, 1, alice);
+    play(4, 2, bob);
+    play(8, 1, alice);
+    play(5, 2, bob);
+
+    // Check Alice's stats after 1 win, 1 loss
+    const aliceStats = simnet.getMapEntry("stacks-xox-game", "player-stats", Cl.principal(alice));
+    expect(aliceStats).toBeSome(
+      Cl.tuple({
+        wins: Cl.uint(1),
+        losses: Cl.uint(1),
+        "stx-won": Cl.uint(200), // Only from first win
+        "games-played": Cl.uint(2)
+      })
+    );
+
+    // Check Bob's stats after 1 win, 1 loss
+    const bobStats = simnet.getMapEntry("stacks-xox-game", "player-stats", Cl.principal(bob));
+    expect(bobStats).toBeSome(
+      Cl.tuple({
+        wins: Cl.uint(1),
+        losses: Cl.uint(1),
+        "stx-won": Cl.uint(200), // Only from second win
+        "games-played": Cl.uint(2)
+      })
+    );
+  });
+
+  it("returns correct player stats via read-only functions", () => {
+    // Setup: Alice wins a game
+    createGame(100, 0, 1, alice);
+    joinGame(3, 2, bob);
+    play(1, 1, alice);
+    play(4, 2, bob);
+    play(2, 1, alice);
+
+    // Test get-player-stats function
+    const aliceStatsResult = simnet.callReadOnlyFn(
+      "stacks-xox-game",
+      "get-player-stats",
+      [Cl.principal(alice)],
+      alice
+    );
+
+    expect(aliceStatsResult).toBeSome(
+      Cl.tuple({
+        wins: Cl.uint(1),
+        losses: Cl.uint(0),
+        "stx-won": Cl.uint(200),
+        "games-played": Cl.uint(1)
+      })
+    );
+
+    // Test get-all-player-stats function
+    const allStatsResult = simnet.callReadOnlyFn(
+      "stacks-xox-game",
+      "get-all-player-stats",
+      [],
+      alice
+    );
+
+    // Should return a list with both players' stats
+    expect(allStatsResult).toBeOk(Cl.list([
+      Cl.tuple({
+        wins: Cl.uint(1),
+        losses: Cl.uint(0),
+        "stx-won": Cl.uint(200),
+        "games-played": Cl.uint(1)
+      }),
+      Cl.tuple({
+        wins: Cl.uint(0),
+        losses: Cl.uint(1),
+        "stx-won": Cl.uint(0),
+        "games-played": Cl.uint(1)
+      })
+    ]));
+  });
+});

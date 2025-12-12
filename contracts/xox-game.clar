@@ -8,6 +8,17 @@
 ;; The Game ID to use for the next game
 (define-data-var latest-game-id uint u0)
 
+;; Player statistics tracking
+(define-map player-stats
+    principal ;; Key (Player address)
+    { ;; Value (Player Stats)
+        wins: uint,
+        losses: uint,
+        stx-won: uint,
+        games-played: uint
+    }
+)
+
 (define-map games 
     uint ;; Key (Game ID)
     { ;; Value (Game Tuple)
@@ -134,6 +145,18 @@
     ;; if the game has been won, transfer the (bet amount * 2 = both players bets) STX to the winner
     (if is-now-winner (try! (as-contract (stx-transfer? (* u2 (get bet-amount game-data)) tx-sender player-turn))) false)
 
+    ;; Update player statistics when a game is won
+    (if is-now-winner
+        (begin
+            ;; Update winner stats
+            (update-winner-stats player-turn (* u2 (get bet-amount game-data)))
+            ;; Update loser stats (the other player)
+            (let ((loser (if is-player-one-turn (unwrap! (get player-two original-game-data) (err ERR_GAME_NOT_FOUND)) (get player-one original-game-data))))
+                (update-loser-stats loser))
+        )
+        false
+    )
+
     ;; Update the games map with the new game data
     (map-set games game-id game-data)
 
@@ -149,6 +172,16 @@
 
 (define-read-only (get-latest-game-id)
     (var-get latest-game-id)
+)
+
+;; Get player statistics
+(define-read-only (get-player-stats (player principal))
+    (map-get? player-stats player)
+)
+
+;; Get all player statistics (for leaderboard)
+(define-read-only (get-all-player-stats)
+    (map-values player-stats)
 )
 
 (define-private (validate-move (board (list 9 uint)) (move-index uint) (move uint))
@@ -184,7 +217,7 @@
 ;; Given a board and three cells to look at on the board
 ;; Return true if all three are not empty and are the same value (all X or all O)
 ;; Return false if any of the three is empty or a different value
-(define-private (is-line (board (list 9 uint)) (a uint) (b uint) (c uint)) 
+(define-private (is-line (board (list 9 uint)) (a uint) (b uint) (c uint))
     (let (
         ;; Value of cell at index a
         (a-val (unwrap! (element-at? board a) false))
@@ -196,4 +229,48 @@
 
     ;; a-val must equal b-val and must also equal c-val while not being empty (non-zero)
     (and (is-eq a-val b-val) (is-eq a-val c-val) (not (is-eq a-val u0)))
+))
+
+;; Initialize player stats if they don't exist
+(define-private (init-player-stats (player principal))
+    (let (
+        (current-stats (map-get? player-stats player))
+    )
+    (if (is-none current-stats)
+        (map-set player-stats player {
+            wins: u0,
+            losses: u0,
+            stx-won: u0,
+            games-played: u0
+        })
+        current-stats
+    )
+))
+
+;; Update player stats when a game is won
+(define-private (update-winner-stats (winner principal) (stx-amount uint))
+    (let (
+        (current-stats (init-player-stats winner))
+        (stats-data (unwrap! current-stats (err ERR_GAME_NOT_FOUND)))
+    )
+    (map-set player-stats winner {
+        wins: (+ (get wins stats-data) u1),
+        losses: (get losses stats-data),
+        stx-won: (+ (get stx-won stats-data) stx-amount),
+        games-played: (+ (get games-played stats-data) u1)
+    })
+))
+
+;; Update player stats when a game is lost
+(define-private (update-loser-stats (loser principal))
+    (let (
+        (current-stats (init-player-stats loser))
+        (stats-data (unwrap! current-stats (err ERR_GAME_NOT_FOUND)))
+    )
+    (map-set player-stats loser {
+        wins: (get wins stats-data),
+        losses: (+ (get losses stats-data) u1),
+        stx-won: (get stx-won stats-data),
+        games-played: (+ (get games-played stats-data) u1)
+    })
 ))
