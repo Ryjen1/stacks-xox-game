@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { useStacks } from "@/hooks/use-stacks";
 import { abbreviateAddress } from "@/lib/stx-utils";
 import Link from "next/link";
@@ -22,6 +23,9 @@ export function Navbar() {
         </Link>
         <Link href="/profile" className="text-gray-300 hover:text-gray-50">
           Profile
+        </Link>
+        <Link href="/leaderboard" className="text-gray-300 hover:text-gray-50">
+          Leaderboard
         </Link>
       </div>
 
