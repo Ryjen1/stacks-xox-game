@@ -1,13 +1,23 @@
 "use client";
 
 import { GameBoard } from "@/components/game-board";
+import { LoadingSpinner } from "@/components/loading-spinner";
+import { Notification } from "@/components/notification";
 import { useStacks } from "@/hooks/use-stacks";
 import { EMPTY_BOARD, Move } from "@/lib/contract";
 import { formatStx, parseStx } from "@/lib/stx-utils";
 import { useState } from "react";
 
 export default function CreateGame() {
-  const { stxBalance, userData, connectWallet, handleCreateGame } = useStacks();
+  const {
+    stxBalance,
+    userData,
+    connectWallet,
+    handleCreateGame,
+    transactionState,
+    notification,
+    hideNotification
+  } = useStacks();
 
   const [betAmount, setBetAmount] = useState(0);
   // When creating a new game, the initial board is entirely empty
@@ -70,10 +80,18 @@ export default function CreateGame() {
         {userData ? (
           <button
             type="button"
-            className="bg-blue-500 text-white px-4 py-2 rounded"
+            disabled={transactionState.isPending || board.every(cell => cell === Move.EMPTY) || betAmount === 0}
+            className="bg-blue-500 disabled:bg-gray-500 disabled:cursor-not-allowed text-white px-4 py-2 rounded flex items-center justify-center gap-2"
             onClick={onCreateGame}
           >
-            Create Game
+            {transactionState.isPending && transactionState.type === "createGame" ? (
+              <>
+                <LoadingSpinner size="sm" />
+                Creating Game...
+              </>
+            ) : (
+              "Create Game"
+            )}
           </button>
         ) : (
           <button
@@ -85,6 +103,13 @@ export default function CreateGame() {
           </button>
         )}
       </div>
+      
+      <Notification
+        message={notification.message}
+        type={notification.type}
+        isVisible={notification.isVisible}
+        onClose={hideNotification}
+      />
     </section>
   );
 }
