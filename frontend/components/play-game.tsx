@@ -2,6 +2,8 @@
 
 import { Game, Move } from "@/lib/contract";
 import { GameBoard } from "./game-board";
+import { LoadingSpinner } from "./loading-spinner";
+import { Notification } from "./notification";
 import { abbreviateAddress, explorerAddress, formatStx } from "@/lib/stx-utils";
 import Link from "next/link";
 import { useStacks } from "@/hooks/use-stacks";
@@ -12,7 +14,16 @@ interface PlayGameProps {
 }
 
 export function PlayGame({ game }: PlayGameProps) {
-  const { userData, handleJoinGame, handlePlayGame, handleRematchGame, handleAcceptRematch } = useStacks();
+  const {
+    userData,
+    handleJoinGame,
+    handlePlayGame,
+    handleRematchGame,
+    handleAcceptRematch,
+    transactionState,
+    notification,
+    hideNotification
+  } = useStacks();
   const [board, setBoard] = useState(game.board);
   const [playedMoveIndex, setPlayedMoveIndex] = useState(-1);
   const [rematchRequested, setRematchRequested] = useState(false);
@@ -109,18 +120,34 @@ export function PlayGame({ game }: PlayGameProps) {
       {isJoinable && (
         <button
           onClick={() => handleJoinGame(game.id, playedMoveIndex, nextMove)}
-          className="bg-blue-500 text-white px-4 py-2 rounded"
+          disabled={transactionState.isPending || playedMoveIndex === -1}
+          className="bg-blue-500 disabled:bg-gray-500 disabled:cursor-not-allowed text-white px-4 py-2 rounded flex items-center justify-center gap-2"
         >
-          Join Game
+          {transactionState.isPending && transactionState.type === "joinGame" ? (
+            <>
+              <LoadingSpinner size="sm" />
+              Joining Game...
+            </>
+          ) : (
+            "Join Game"
+          )}
         </button>
       )}
 
       {isMyTurn && (
         <button
           onClick={() => handlePlayGame(game.id, playedMoveIndex, nextMove)}
-          className="bg-blue-500 text-white px-4 py-2 rounded"
+          disabled={transactionState.isPending || playedMoveIndex === -1}
+          className="bg-blue-500 disabled:bg-gray-500 disabled:cursor-not-allowed text-white px-4 py-2 rounded flex items-center justify-center gap-2"
         >
-          Play
+          {transactionState.isPending && transactionState.type === "playGame" ? (
+            <>
+              <LoadingSpinner size="sm" />
+              Playing Move...
+            </>
+          ) : (
+            "Play"
+          )}
         </button>
       )}
 
@@ -142,9 +169,17 @@ export function PlayGame({ game }: PlayGameProps) {
                 const newMove = isPlayerOne ? Move.O : Move.X;
                 handleRematchGame(game, 0, newMove); // Start with empty board
               }}
-              className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+              disabled={transactionState.isPending}
+              className="bg-green-500 disabled:bg-gray-500 disabled:cursor-not-allowed text-white px-4 py-2 rounded hover:bg-green-600 flex items-center justify-center gap-2"
             >
-              Request Rematch
+              {transactionState.isPending && transactionState.type === "rematchGame" ? (
+                <>
+                  <LoadingSpinner size="sm" />
+                  Requesting Rematch...
+                </>
+              ) : (
+                "Request Rematch"
+              )}
             </button>
           )}
 
@@ -193,6 +228,13 @@ export function PlayGame({ game }: PlayGameProps) {
           )}
         </div>
       )}
+      
+      <Notification
+        message={notification.message}
+        type={notification.type}
+        isVisible={notification.isVisible}
+        onClose={hideNotification}
+      />
     </div>
   );
 }
