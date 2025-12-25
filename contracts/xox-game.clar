@@ -4,6 +4,10 @@
 (define-constant ERR_GAME_NOT_FOUND u102) ;; Error thrown when a game cannot be found given a Game ID, i.e. invalid Game ID
 (define-constant ERR_GAME_CANNOT_BE_JOINED u103) ;; Error thrown when a game cannot be joined, usually because it already has two players
 (define-constant ERR_NOT_YOUR_TURN u104) ;; Error thrown when a player tries to make a move when it is not their turn
+(define-constant ERR_GAME_ALREADY_FINISHED u105) ;; Error thrown when trying to claim timeout on a finished game
+(define-constant ERR_TIMEOUT_NOT_REACHED u106) ;; Error thrown when timeout has not been reached yet
+(define-constant ERR_NOT_OPPONENT u107) ;; Error thrown when non-opponent tries to claim timeout
+(define-constant TIMEOUT_BLOCKS u10) ;; Number of blocks after which timeout can be claimed
 
 ;; The Game ID to use for the next game
 (define-data-var latest-game-id uint u0)
@@ -29,7 +33,8 @@
         bet-amount: uint,
         board: (list 9 uint),
         
-        winner: (optional principal)
+        winner: (optional principal),
+        last-move-block-height: uint
     }
 )
 
@@ -48,7 +53,8 @@
             is-player-one-turn: false,
             bet-amount: bet-amount,
             board: game-board,
-            winner: none
+            winner: none,
+            last-move-block-height: stacks-block-height
         })
     )
 
@@ -85,7 +91,8 @@
         (game-data (merge original-game-data {
             board: game-board,
             player-two: (some contract-caller),
-            is-player-one-turn: true
+            is-player-one-turn: true,
+            last-move-block-height: stacks-block-height
         }))
     )
 
@@ -131,7 +138,8 @@
         (game-data (merge original-game-data {
             board: game-board,
             is-player-one-turn: (not is-player-one-turn),
-            winner: (if is-now-winner (some player-turn) none)
+            winner: (if is-now-winner (some player-turn) none),
+            last-move-block-height: stacks-block-height
         }))
     )
 
