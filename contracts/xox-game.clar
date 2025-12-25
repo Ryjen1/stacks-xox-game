@@ -23,7 +23,7 @@
     }
 )
 
-(define-map games 
+(define-map games
     uint ;; Key (Game ID)
     { ;; Value (Game Tuple)
         player-one: principal,
@@ -32,9 +32,10 @@
 
         bet-amount: uint,
         board: (list 9 uint),
-        
+
         winner: (optional principal),
-        last-move-block-height: uint
+        last-move-block-height: uint,
+        moves: (list 9 {move-index: uint, move: uint})
     }
 )
 
