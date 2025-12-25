@@ -21,6 +21,9 @@ export function Navbar() {
         <Link href="/create" className="text-gray-300 hover:text-gray-50">
           Create Game
         </Link>
+        <Link href="/history" className="text-gray-300 hover:text-gray-50">
+          History
+        </Link>
         <Link href="/profile" className="text-gray-300 hover:text-gray-50">
           Profile
         </Link>
