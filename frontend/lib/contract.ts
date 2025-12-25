@@ -21,6 +21,7 @@ type GameCV = {
   "bet-amount": UIntCV;
   board: ListCV<UIntCV>;
   winner: OptionalCV<PrincipalCV>;
+  moves: ListCV<TupleCV<{ "move-index": UIntCV, move: UIntCV }>>;
 };
 
 export type Game = {
@@ -31,6 +32,7 @@ export type Game = {
   "bet-amount": number;
   board: number[];
   winner: string | null;
+  moves: {moveIndex: number, move: number}[];
 };
 
 export type PlayerStats = {
@@ -113,6 +115,10 @@ export async function getGame(gameId: number) {
     board: gameCV["board"].value.map((cell: UIntCV) => parseInt(cell.value.toString())),
     winner:
       gameCV["winner"].type === "some" ? gameCV["winner"].value.value : null,
+    moves: gameCV["moves"].value.map((moveCV: TupleCV<{ "move-index": UIntCV, move: UIntCV }>) => ({
+      moveIndex: parseInt(moveCV.value["move-index"].value.toString()),
+      move: parseInt(moveCV.value.move.value.toString())
+    })),
   };
   return game;
 }
