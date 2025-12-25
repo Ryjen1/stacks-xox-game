@@ -132,6 +132,14 @@ describe("Tic Tac Toe Tests", () => {
           Cl.uint(0),
         ]),
         winner: Cl.some(Cl.principal(alice)),
+        "last-move-block-height": Cl.uint(5),
+        moves: Cl.list([
+          Cl.tuple({ "move-index": Cl.uint(0), move: Cl.uint(1) }),
+          Cl.tuple({ "move-index": Cl.uint(3), move: Cl.uint(2) }),
+          Cl.tuple({ "move-index": Cl.uint(1), move: Cl.uint(1) }),
+          Cl.tuple({ "move-index": Cl.uint(4), move: Cl.uint(2) }),
+          Cl.tuple({ "move-index": Cl.uint(2), move: Cl.uint(1) }),
+        ]),
       })
     );
   });
