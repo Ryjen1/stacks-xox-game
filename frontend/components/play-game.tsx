@@ -94,6 +94,7 @@ export function PlayGame({ game }: PlayGameProps) {
         cellClassName="size-32 text-6xl"
       />
 
+      {/* Mute/Unmute toggle button */}
       <div className="flex justify-center">
         <button
           onClick={() => setIsMuted(!isMuted)}
