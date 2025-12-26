@@ -31,6 +31,7 @@ export function PlayGame({ game }: PlayGameProps) {
   const [newGameId, setNewGameId] = useState<number | null>(null);
   const [isMuted, setIsMuted] = useState(false);
 
+  // Function to play sound effects
   const playSound = (sound: string) => {
     if (isMuted) return;
     const audio = new Audio(`/${sound}.mp3`);
