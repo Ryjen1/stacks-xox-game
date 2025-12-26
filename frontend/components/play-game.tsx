@@ -64,7 +64,7 @@ export function PlayGame({ game }: PlayGameProps) {
     }
   }, [rematchRequested]);
 
-  // Play win/lose sounds
+  // Play win/lose sounds when game ends
   useEffect(() => {
     if (game.winner) {
       if (game.winner === userData.profile.stxAddress.testnet) {
