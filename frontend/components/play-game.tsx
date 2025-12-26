@@ -77,7 +77,7 @@ export function PlayGame({ game }: PlayGameProps) {
 
   function onCellClick(index: number) {
     if (game.board[index] === Move.EMPTY) {
-      playSound('move');
+      playSound('move'); // Play move sound when placing a valid move
     }
     const tempBoard = [...game.board];
     tempBoard[index] = nextMove;
