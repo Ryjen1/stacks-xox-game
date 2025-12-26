@@ -29,7 +29,7 @@ export function PlayGame({ game }: PlayGameProps) {
   const [rematchRequested, setRematchRequested] = useState(false);
   const [opponentAcceptedRematch, setOpponentAcceptedRematch] = useState(false);
   const [newGameId, setNewGameId] = useState<number | null>(null);
-  const [isMuted, setIsMuted] = useState(false);
+  const [isMuted, setIsMuted] = useState(false); // State for muting sound effects
 
   // Function to play sound effects
   const playSound = (sound: string) => {
