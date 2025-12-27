@@ -29,6 +29,15 @@ export function PlayGame({ game }: PlayGameProps) {
   const [rematchRequested, setRematchRequested] = useState(false);
   const [opponentAcceptedRematch, setOpponentAcceptedRematch] = useState(false);
   const [newGameId, setNewGameId] = useState<number | null>(null);
+  const [isMuted, setIsMuted] = useState(false); // State for muting sound effects
+
+  // Function to play sound effects
+  const playSound = (sound: string) => {
+    if (isMuted) return;
+    const audio = new Audio(`/${sound}.mp3`);
+    audio.play().catch(() => {}); // Ignore errors if audio fails
+  };
+
   if (!userData) return null;
 
   const isPlayerOne =
@@ -55,7 +64,21 @@ export function PlayGame({ game }: PlayGameProps) {
     }
   }, [rematchRequested]);
 
+  // Play win/lose sounds when game ends
+  useEffect(() => {
+    if (game.winner) {
+      if (game.winner === userData.profile.stxAddress.testnet) {
+        playSound('victory');
+      } else {
+        playSound('defeat');
+      }
+    }
+  }, [game.winner]);
+
   function onCellClick(index: number) {
+    if (game.board[index] === Move.EMPTY) {
+      playSound('move'); // Play move sound when placing a valid move
+    }
     const tempBoard = [...game.board];
     tempBoard[index] = nextMove;
     setBoard(tempBoard);
@@ -70,6 +93,16 @@ export function PlayGame({ game }: PlayGameProps) {
         nextMove={nextMove}
         cellClassName="size-32 text-6xl"
       />
+
+      {/* Mute/Unmute toggle button */}
+      <div className="flex justify-center">
+        <button
+          onClick={() => setIsMuted(!isMuted)}
+          className="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded text-sm"
+        >
+          {isMuted ? '🔇 Unmute' : '🔊 Mute'}
+        </button>
+      </div>
 
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between gap-2">
