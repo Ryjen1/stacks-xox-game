@@ -86,25 +86,25 @@ export function PlayGame({ game }: PlayGameProps) {
   }
 
   return (
-    <div className="flex flex-col gap-4 w-[400px]">
+    <div className="flex flex-col gap-4 w-full max-w-sm sm:max-w-md mx-auto px-4">
       <GameBoard
         board={board}
         onCellClick={onCellClick}
         nextMove={nextMove}
-        cellClassName="size-32 text-6xl"
+        cellClassName="size-20 sm:size-32 text-4xl sm:text-6xl"
       />
 
       {/* Mute/Unmute toggle button */}
       <div className="flex justify-center">
         <button
           onClick={() => setIsMuted(!isMuted)}
-          className="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded text-sm"
+          className="px-4 py-2 min-h-10 bg-gray-200 hover:bg-gray-300 rounded text-sm sm:text-base"
         >
           {isMuted ? '🔇 Unmute' : '🔊 Mute'}
         </button>
       </div>
 
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-2 text-sm sm:text-base">
         <div className="flex items-center justify-between gap-2">
           <span className="text-gray-500">Bet Amount: </span>
           <span>{formatStx(game["bet-amount"])} STX</span>
@@ -154,7 +154,7 @@ export function PlayGame({ game }: PlayGameProps) {
         <button
           onClick={() => handleJoinGame(game.id, playedMoveIndex, nextMove)}
           disabled={transactionState.isPending || playedMoveIndex === -1}
-          className="bg-blue-500 disabled:bg-gray-500 disabled:cursor-not-allowed text-white px-4 py-2 rounded flex items-center justify-center gap-2"
+          className="bg-blue-500 disabled:bg-gray-500 disabled:cursor-not-allowed text-white px-6 py-3 min-h-12 rounded flex items-center justify-center gap-2 text-base"
         >
           {transactionState.isPending && transactionState.type === "joinGame" ? (
             <>
@@ -171,7 +171,7 @@ export function PlayGame({ game }: PlayGameProps) {
         <button
           onClick={() => handlePlayGame(game.id, playedMoveIndex, nextMove)}
           disabled={transactionState.isPending || playedMoveIndex === -1}
-          className="bg-blue-500 disabled:bg-gray-500 disabled:cursor-not-allowed text-white px-4 py-2 rounded flex items-center justify-center gap-2"
+          className="bg-blue-500 disabled:bg-gray-500 disabled:cursor-not-allowed text-white px-6 py-3 min-h-12 rounded flex items-center justify-center gap-2 text-base"
         >
           {transactionState.isPending && transactionState.type === "playGame" ? (
             <>
@@ -185,13 +185,13 @@ export function PlayGame({ game }: PlayGameProps) {
       )}
 
       {isJoinedAlready && !isMyTurn && !isGameOver && (
-        <div className="text-gray-500">Waiting for opponent to play...</div>
+        <div className="text-gray-500 text-sm sm:text-base">Waiting for opponent to play...</div>
       )}
 
       {/* Rematch functionality - show after game ends */}
       {isGameOver && (
-        <div className="mt-4 p-4 border rounded-lg">
-          <h3 className="font-semibold mb-2">Game Over!</h3>
+        <div className="mt-4 p-4 border rounded-lg text-sm sm:text-base">
+          <h3 className="font-semibold mb-2 text-base sm:text-lg">Game Over!</h3>
 
           {!rematchRequested && !opponentAcceptedRematch && newGameId === null && (
             <button
@@ -203,7 +203,7 @@ export function PlayGame({ game }: PlayGameProps) {
                 handleRematchGame(game, 0, newMove); // Start with empty board
               }}
               disabled={transactionState.isPending}
-              className="bg-green-500 disabled:bg-gray-500 disabled:cursor-not-allowed text-white px-4 py-2 rounded hover:bg-green-600 flex items-center justify-center gap-2"
+              className="bg-green-500 disabled:bg-gray-500 disabled:cursor-not-allowed text-white px-6 py-3 min-h-12 rounded hover:bg-green-600 flex items-center justify-center gap-2 text-base"
             >
               {transactionState.isPending && transactionState.type === "rematchGame" ? (
                 <>
@@ -229,7 +229,7 @@ export function PlayGame({ game }: PlayGameProps) {
                     const simulatedNewGameId = Math.floor(Math.random() * 1000);
                     setNewGameId(simulatedNewGameId);
                   }}
-                  className="bg-blue-500 text-white px-3 py-1 rounded text-sm mt-2"
+                  className="bg-blue-500 text-white px-4 py-2 min-h-10 rounded text-sm sm:text-base"
                 >
                   [DEV] Simulate Opponent Accept
                 </button>
@@ -252,7 +252,7 @@ export function PlayGame({ game }: PlayGameProps) {
               <div className="mt-3">
                 <Link
                   href={`/game/${newGameId}`}
-                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 inline-block"
+                  className="bg-blue-500 text-white px-6 py-3 min-h-12 rounded hover:bg-blue-600 inline-block text-base"
                 >
                   🚀 Go to New Game
                 </Link>

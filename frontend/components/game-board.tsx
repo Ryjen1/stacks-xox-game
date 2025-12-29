@@ -16,13 +16,13 @@ export function GameBoard({
   cellClassName,
 }: GameBoardProps) {
   return (
-    <div className="flex flex-col items-start gap-2">
-      <div className="grid grid-cols-3 gap-2">
+    <div className="flex flex-col items-center gap-2">
+      <div className="grid grid-cols-3 gap-1 sm:gap-2">
         {board.map((cell, index) => (
           <div
             key={index}
             className={
-              "border border-gray-600 rounded-md flex items-center justify-center font-bold group cursor-pointer " +
+              "border border-gray-600 rounded-md flex items-center justify-center font-bold group cursor-pointer min-h-12 min-w-12 " +
               cellClassName
             }
             onClick={() => onCellClick?.(index)}
