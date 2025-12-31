@@ -34,6 +34,7 @@
         board: (list 9 uint),
 
         winner: (optional principal),
+        finished: bool,
         last-move-block-height: uint,
         moves: (list 9 {move-index: uint, move: uint})
     }
@@ -55,6 +56,7 @@
             bet-amount: bet-amount,
             board: game-board,
             winner: none,
+            finished: false,
             last-move-block-height: stacks-block-height
         })
     )
@@ -93,6 +95,7 @@
             board: game-board,
             player-two: (some contract-caller),
             is-player-one-turn: true,
+            finished: false,
             last-move-block-height: stacks-block-height
         }))
     )
@@ -134,12 +137,17 @@
         (game-board (unwrap! (replace-at? original-board move-index move) (err ERR_INVALID_MOVE)))
         ;; Check if the game has been won now with this modified board
         (is-now-winner (has-won game-board))
+        ;; Check if the board is now full (for draw detection)
+        (is-now-full (is-board-full game-board))
+        ;; Determine if the game is finished (won or drawn)
+        (is-finished (or is-now-winner is-now-full))
         ;; Merge the game data with the updated board and marking the next turn to be player two's turn
-        ;; Also mark the winner if the game has been won
+        ;; Also mark the winner if the game has been won, and finished status
         (game-data (merge original-game-data {
             board: game-board,
             is-player-one-turn: (not is-player-one-turn),
             winner: (if is-now-winner (some player-turn) none),
+            finished: is-finished,
             last-move-block-height: stacks-block-height
         }))
     )
@@ -151,19 +159,24 @@
     ;; Ensure that the move meets validity requirements
     (asserts! (validate-move original-board move-index move) (err ERR_INVALID_MOVE))
 
-    ;; if the game has been won, transfer the (bet amount * 2 = both players bets) STX to the winner
-    (if is-now-winner (try! (as-contract (stx-transfer? (* u2 (get bet-amount game-data)) tx-sender player-turn))) false)
-
-    ;; Update player statistics when a game is won
+    ;; Handle payouts and stats based on game outcome
     (if is-now-winner
+        ;; Game won: transfer all bets to winner, update winner and loser stats
         (begin
-            ;; Update winner stats
+            (try! (as-contract (stx-transfer? (* u2 (get bet-amount game-data)) tx-sender player-turn)))
             (update-winner-stats player-turn (* u2 (get bet-amount game-data)))
-            ;; Update loser stats (the other player)
             (let ((loser (if is-player-one-turn (unwrap! (get player-two original-game-data) (err ERR_GAME_NOT_FOUND)) (get player-one original-game-data))))
                 (update-loser-stats loser))
         )
-        false
+        (if is-now-full
+            ;; Game drawn: return bets to both players, update draw stats
+            (begin
+                (try! (as-contract (stx-transfer? (get bet-amount game-data) tx-sender (get player-one original-game-data))))
+                (try! (as-contract (stx-transfer? (get bet-amount game-data) tx-sender (unwrap! (get player-two original-game-data) (err ERR_GAME_NOT_FOUND)))))
+                (update-draw-stats (get player-one original-game-data) (unwrap! (get player-two original-game-data) (err ERR_GAME_NOT_FOUND)))
+            )
+            false
+        )
     )
 
     ;; Update the games map with the new game data
@@ -210,7 +223,7 @@
 ))
 
 ;; Given a board, return true if any possible three-in-a-row line has been completed
-(define-private (has-won (board (list 9 uint))) 
+(define-private (has-won (board (list 9 uint)))
     (or
         (is-line board u0 u1 u2) ;; Row 1
         (is-line board u3 u4 u5) ;; Row 2
@@ -221,6 +234,16 @@
         (is-line board u0 u4 u8) ;; Left to Right Diagonal
         (is-line board u2 u4 u6) ;; Right to Left Diagonal
     )
+)
+
+;; Given a board, return true if all cells are filled (no empty spots)
+(define-private (is-board-full (board (list 9 uint)))
+    (is-eq (len (filter is-empty board)) u0)
+)
+
+;; Helper function to check if a cell is empty
+(define-private (is-empty (cell uint))
+    (is-eq cell u0)
 )
 
 ;; Given a board and three cells to look at on the board
@@ -279,6 +302,28 @@
     (map-set player-stats loser {
         wins: (get wins stats-data),
         losses: (+ (get losses stats-data) u1),
+        stx-won: (get stx-won stats-data),
+        games-played: (+ (get games-played stats-data) u1)
+    })
+))
+
+;; Update player stats for a draw (increment games-played for both players)
+(define-private (update-draw-stats (player1 principal) (player2 principal))
+    (begin
+        (update-draw-player-stats player1)
+        (update-draw-player-stats player2)
+    )
+)
+
+;; Update player stats for a single player in a draw
+(define-private (update-draw-player-stats (player principal))
+    (let (
+        (current-stats (init-player-stats player))
+        (stats-data (unwrap! current-stats (err ERR_GAME_NOT_FOUND)))
+    )
+    (map-set player-stats player {
+        wins: (get wins stats-data),
+        losses: (get losses stats-data),
         stx-won: (get stx-won stats-data),
         games-played: (+ (get games-played stats-data) u1)
     })

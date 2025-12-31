@@ -21,6 +21,7 @@ type GameCV = {
   "bet-amount": UIntCV;
   board: ListCV<UIntCV>;
   winner: OptionalCV<PrincipalCV>;
+  finished: BooleanCV;
   moves: ListCV<TupleCV<{ "move-index": UIntCV, move: UIntCV }>>;
 };
 
@@ -32,6 +33,7 @@ export type Game = {
   "bet-amount": number;
   board: number[];
   winner: string | null;
+  finished: boolean;
   moves: {moveIndex: number, move: number}[];
 };
 
@@ -115,6 +117,7 @@ export async function getGame(gameId: number) {
     board: gameCV["board"].value.map((cell: UIntCV) => parseInt(cell.value.toString())),
     winner:
       gameCV["winner"].type === "some" ? gameCV["winner"].value.value : null,
+    finished: cvToValue(gameCV["finished"]),
     moves: gameCV["moves"].value.map((moveCV: TupleCV<{ "move-index": UIntCV, move: UIntCV }>) => ({
       moveIndex: parseInt(moveCV.value["move-index"].value.toString()),
       move: parseInt(moveCV.value.move.value.toString())
@@ -147,7 +150,7 @@ export async function createRematchGame(
   const betAmount = originalGame["bet-amount"];
 
   // Validate that this is a valid rematch scenario
-  if (!originalGame.winner) {
+  if (!originalGame.finished) {
     throw new Error("Game must be completed before creating a rematch");
   }
 

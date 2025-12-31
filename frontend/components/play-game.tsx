@@ -51,7 +51,7 @@ export function PlayGame({ game }: PlayGameProps) {
   const isMyTurn =
     (game["is-player-one-turn"] && isPlayerOne) ||
     (!game["is-player-one-turn"] && isPlayerTwo);
-  const isGameOver = game.winner !== null;
+  const isGameOver = game.finished;
 
   // Simulate opponent rematch acceptance (in a real app, this would come from contract events)
   useEffect(() => {
@@ -136,7 +136,7 @@ export function PlayGame({ game }: PlayGameProps) {
           )}
         </div>
 
-        {game["winner"] && (
+        {game["winner"] ? (
           <div className="flex items-center justify-between gap-2">
             <span className="text-gray-500">Winner: </span>
             <Link
@@ -147,7 +147,12 @@ export function PlayGame({ game }: PlayGameProps) {
               {abbreviateAddress(game["winner"])}
             </Link>
           </div>
-        )}
+        ) : game.finished ? (
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-gray-500">Result: </span>
+            <span>Draw</span>
+          </div>
+        ) : null}
       </div>
 
       {isJoinable && (
