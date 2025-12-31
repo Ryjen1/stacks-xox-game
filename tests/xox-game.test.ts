@@ -132,6 +132,7 @@ describe("Tic Tac Toe Tests", () => {
           Cl.uint(0),
         ]),
         winner: Cl.some(Cl.principal(alice)),
+        finished: Cl.bool(true),
         "last-move-block-height": Cl.uint(5),
         moves: Cl.list([
           Cl.tuple({ "move-index": Cl.uint(0), move: Cl.uint(1) }),
@@ -174,8 +175,57 @@ describe("Tic Tac Toe Tests", () => {
           Cl.uint(1),
         ]),
         winner: Cl.some(Cl.principal(bob)),
+        finished: Cl.bool(true),
       })
     );
+  });
+
+  it("detects a draw when all cells are filled without a winner", () => {
+    createGame(100, 0, 1, alice); // X at 0
+    joinGame(1, 2, bob); // O at 1
+    play(2, 1, alice); // X at 2
+    play(3, 2, bob); // O at 3
+    play(5, 1, alice); // X at 5
+    play(4, 2, bob); // O at 4
+    play(6, 1, alice); // X at 6
+    play(7, 2, bob); // O at 7
+    const { result, events } = play(8, 1, alice); // X at 8, board full, draw
+
+    expect(result).toBeOk(Cl.uint(0));
+    expect(events.length).toBe(3); // print_event and 2 stx_transfer_events (bets returned)
+
+    const gameData = simnet.getMapEntry("stacks-xox-game", "games", Cl.uint(0));
+    expect(gameData).toBeSome(
+      Cl.tuple({
+        "player-one": Cl.principal(alice),
+        "player-two": Cl.some(Cl.principal(bob)),
+        "is-player-one-turn": Cl.bool(false),
+        "bet-amount": Cl.uint(100),
+        board: Cl.list([
+          Cl.uint(1), Cl.uint(2), Cl.uint(1),
+          Cl.uint(2), Cl.uint(2), Cl.uint(1),
+          Cl.uint(1), Cl.uint(2), Cl.uint(1),
+        ]),
+        winner: Cl.none(),
+        finished: Cl.bool(true),
+        "last-move-block-height": Cl.uint(10),
+        moves: Cl.list([
+          Cl.tuple({ "move-index": Cl.uint(0), move: Cl.uint(1) }),
+          Cl.tuple({ "move-index": Cl.uint(1), move: Cl.uint(2) }),
+          Cl.tuple({ "move-index": Cl.uint(2), move: Cl.uint(1) }),
+          Cl.tuple({ "move-index": Cl.uint(3), move: Cl.uint(2) }),
+          Cl.tuple({ "move-index": Cl.uint(5), move: Cl.uint(1) }),
+          Cl.tuple({ "move-index": Cl.uint(4), move: Cl.uint(2) }),
+          Cl.tuple({ "move-index": Cl.uint(6), move: Cl.uint(1) }),
+          Cl.tuple({ "move-index": Cl.uint(7), move: Cl.uint(2) }),
+          Cl.tuple({ "move-index": Cl.uint(8), move: Cl.uint(1) }),
+        ]),
+      })
+    );
+
+    // Check that bets are returned: 2 events for returning bets
+    expect(events[1].type).toBe('stx_transfer_event');
+    expect(events[2].type).toBe('stx_transfer_event');
   });
 });
 
@@ -297,5 +347,39 @@ describe("Player Statistics Tests", () => {
         "games-played": Cl.uint(1)
       })
     ]));
+  });
+
+  it("updates player stats correctly for a draw", () => {
+    createGame(100, 0, 1, alice);
+    joinGame(1, 2, bob);
+    play(2, 1, alice);
+    play(3, 2, bob);
+    play(5, 1, alice);
+    play(4, 2, bob);
+    play(6, 1, alice);
+    play(7, 2, bob);
+    play(8, 1, alice); // Draw
+
+    // Check Alice's stats
+    const aliceStats = simnet.getMapEntry("stacks-xox-game", "player-stats", Cl.principal(alice));
+    expect(aliceStats).toBeSome(
+      Cl.tuple({
+        wins: Cl.uint(0),
+        losses: Cl.uint(0),
+        "stx-won": Cl.uint(0),
+        "games-played": Cl.uint(1)
+      })
+    );
+
+    // Check Bob's stats
+    const bobStats = simnet.getMapEntry("stacks-xox-game", "player-stats", Cl.principal(bob));
+    expect(bobStats).toBeSome(
+      Cl.tuple({
+        wins: Cl.uint(0),
+        losses: Cl.uint(0),
+        "stx-won": Cl.uint(0),
+        "games-played": Cl.uint(1)
+      })
+    );
   });
 });
