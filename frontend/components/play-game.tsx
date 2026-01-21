@@ -52,16 +52,21 @@ export function PlayGame({ game }: PlayGameProps) {
   const isGameOver = game.finished;
 
 
-  // Play win/lose sounds when game ends
+  // Play win/lose/draw sounds when game ends
   useEffect(() => {
-    if (game.winner) {
-      if (game.winner === userData.profile.stxAddress.testnet) {
-        playSound('victory');
+    if (game.finished) {
+      if (game.winner) {
+        if (game.winner === userData.profile.stxAddress.testnet) {
+          playSound('victory');
+        } else {
+          playSound('defeat');
+        }
       } else {
-        playSound('defeat');
+        // Draw - play victory sound for now (could add draw.mp3 later)
+        playSound('victory');
       }
     }
-  }, [game.winner]);
+  }, [game.finished, game.winner]);
 
   function onCellClick(index: number) {
     if (game.board[index] === Move.EMPTY) {
