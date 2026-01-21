@@ -93,4 +93,16 @@ describe('PlayGame Component', () => {
 
     expect(mockHandlePlayGame).toHaveBeenCalled();
   });
+
+  it('shows "Draw" when game is finished with no winner', () => {
+    const drawGame: Game = {
+      ...mockGame,
+      finished: true,
+      winner: null
+    };
+
+    render(<PlayGame game={drawGame} />);
+    expect(screen.getByText('Result:')).toBeInTheDocument();
+    expect(screen.getByText('Draw')).toBeInTheDocument();
+  });
 });
