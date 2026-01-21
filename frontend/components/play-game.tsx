@@ -19,7 +19,6 @@ export function PlayGame({ game }: PlayGameProps) {
     handleJoinGame,
     handlePlayGame,
     handleRematchGame,
-    handleAcceptRematch,
     handleClaimTimeout,
     transactionState,
     notification,
@@ -28,8 +27,6 @@ export function PlayGame({ game }: PlayGameProps) {
   const [board, setBoard] = useState(game.board);
   const [playedMoveIndex, setPlayedMoveIndex] = useState(-1);
   const [rematchRequested, setRematchRequested] = useState(false);
-  const [opponentAcceptedRematch, setOpponentAcceptedRematch] = useState(false);
-  const [newGameId, setNewGameId] = useState<number | null>(null);
   const [isMuted, setIsMuted] = useState(false); // State for muting sound effects
 
   // Function to play sound effects
@@ -54,27 +51,22 @@ export function PlayGame({ game }: PlayGameProps) {
     (!game["is-player-one-turn"] && isPlayerTwo);
   const isGameOver = game.finished;
 
-  // Simulate opponent rematch acceptance (in a real app, this would come from contract events)
-  useEffect(() => {
-    if (rematchRequested) {
-      const timer = setTimeout(() => {
-        setOpponentAcceptedRematch(true);
-      }, 3000); // Simulate 3 second delay for opponent response
 
-      return () => clearTimeout(timer);
-    }
-  }, [rematchRequested]);
-
-  // Play win/lose sounds when game ends
+  // Play win/lose/draw sounds when game ends
   useEffect(() => {
-    if (game.winner) {
-      if (game.winner === userData.profile.stxAddress.testnet) {
-        playSound('victory');
+    if (game.finished) {
+      if (game.winner) {
+        if (game.winner === userData.profile.stxAddress.testnet) {
+          playSound('victory');
+        } else {
+          playSound('defeat');
+        }
       } else {
-        playSound('defeat');
+        // Draw - play victory sound for now (could add draw.mp3 later)
+        playSound('victory');
       }
     }
-  }, [game.winner]);
+  }, [game.finished, game.winner]);
 
   function onCellClick(index: number) {
     if (game.board[index] === Move.EMPTY) {
@@ -210,12 +202,12 @@ export function PlayGame({ game }: PlayGameProps) {
         </div>
       )}
 
-      {/* Rematch functionality - show after game ends */}
+      {/* Rematch functionality - creates a new on-chain game with swapped player roles */}
       {isGameOver && (
         <div className="mt-4 p-4 border rounded-lg text-sm sm:text-base">
           <h3 className="font-semibold mb-2 text-base sm:text-lg">Game Over!</h3>
 
-          {!rematchRequested && !opponentAcceptedRematch && newGameId === null && (
+          {!rematchRequested && (
             <button
               onClick={() => {
                 setRematchRequested(true);
@@ -230,7 +222,7 @@ export function PlayGame({ game }: PlayGameProps) {
               {transactionState.isPending && transactionState.type === "rematchGame" ? (
                 <>
                   <LoadingSpinner size="sm" />
-                  Requesting Rematch...
+                  Creating Rematch Game...
                 </>
               ) : (
                 "Request Rematch"
@@ -238,30 +230,9 @@ export function PlayGame({ game }: PlayGameProps) {
             </button>
           )}
 
-          {rematchRequested && !opponentAcceptedRematch && newGameId === null && (
-            <div className="text-blue-500">
-              Waiting for opponent to accept rematch...
-              <div className="mt-2">
-                <button
-                  onClick={() => {
-                    // Simulate opponent accepting the rematch
-                    setOpponentAcceptedRematch(true);
-                    // In a real app, this would come from a contract event
-                    // For now, we'll simulate creating a new game ID
-                    const simulatedNewGameId = Math.floor(Math.random() * 1000);
-                    setNewGameId(simulatedNewGameId);
-                  }}
-                  className="bg-blue-500 text-white px-4 py-2 min-h-10 rounded text-sm sm:text-base"
-                >
-                  [DEV] Simulate Opponent Accept
-                </button>
-              </div>
-            </div>
-          )}
-
-          {newGameId && (
+          {rematchRequested && transactionState.type === "rematchGame" && !transactionState.isPending && transactionState.error === null && (
             <div className="text-green-500">
-              <p className="font-medium">✅ Rematch started! Game ID: {newGameId}</p>
+              <p className="font-medium">✅ Rematch game created successfully!</p>
               <p className="text-sm mt-1">
                 💰 Same bet amount: {formatStx(game["bet-amount"])} STX
               </p>
@@ -269,16 +240,24 @@ export function PlayGame({ game }: PlayGameProps) {
                 🎮 {isPlayerOne ? "You are now playing as O" : "You are now playing as X"}
               </p>
               <p className="text-xs mt-1 text-gray-600">
-                🔄 Player positions swapped from original game
+                🔄 Player positions swapped from original game. Your opponent can join the new game from the games list.
               </p>
               <div className="mt-3">
                 <Link
-                  href={`/game/${newGameId}`}
+                  href="/"
                   className="bg-blue-500 text-white px-6 py-3 min-h-12 rounded hover:bg-blue-600 inline-block text-base"
                 >
-                  🚀 Go to New Game
+                  📋 View Games List
                 </Link>
               </div>
+              {/* TODO: Add real-time notifications when opponent joins the rematch */}
+            </div>
+          )}
+
+          {rematchRequested && transactionState.type === "rematchGame" && transactionState.error && (
+            <div className="text-red-500">
+              <p className="font-medium">❌ Failed to create rematch game</p>
+              <p className="text-sm mt-1">{transactionState.error}</p>
             </div>
           )}
         </div>
