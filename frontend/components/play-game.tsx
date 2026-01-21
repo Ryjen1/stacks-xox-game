@@ -250,6 +250,7 @@ export function PlayGame({ game }: PlayGameProps) {
                   📋 View Games List
                 </Link>
               </div>
+              {/* TODO: Add real-time notifications when opponent joins the rematch */}
             </div>
           )}
 
