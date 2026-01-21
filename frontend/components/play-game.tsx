@@ -240,7 +240,7 @@ export function PlayGame({ game }: PlayGameProps) {
                 🎮 {isPlayerOne ? "You are now playing as O" : "You are now playing as X"}
               </p>
               <p className="text-xs mt-1 text-gray-600">
-                🔄 Player positions swapped from original game. Opponent can join from the games list.
+                🔄 Player positions swapped from original game. Your opponent can join the new game from the games list.
               </p>
               <div className="mt-3">
                 <Link
