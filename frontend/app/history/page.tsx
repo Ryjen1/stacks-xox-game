@@ -12,7 +12,7 @@ export default function HistoryPage() {
 
   useEffect(() => {
     getAllGames().then(allGames => {
-      const completed = allGames.filter(game => game.winner !== null);
+      const completed = allGames.filter(game => game.finished);
       setGames(completed);
       setFilteredGames(completed);
     });
@@ -38,7 +38,7 @@ export default function HistoryPage() {
   );
 
   const getLoser = (game: Game) => {
-    if (!game.winner) return null;
+    if (!game.winner) return null; // Draw, no loser
     return game.winner === game["player-one"] ? game["player-two"] : game["player-one"];
   };
 
@@ -66,10 +66,16 @@ export default function HistoryPage() {
           <div key={game.id} className="border p-4 mb-4 rounded">
             <div className="flex justify-between">
               <div>
-                <p>Winner: {game.winner}</p>
-                <p>Loser: {getLoser(game)}</p>
+                {game.winner ? (
+                  <>
+                    <p>Winner: {game.winner}</p>
+                    <p>Loser: {getLoser(game)}</p>
+                    <p>Winnings: {getWinnings(game)} STX</p>
+                  </>
+                ) : (
+                  <p>Result: Draw</p>
+                )}
                 <p>Bet: {game["bet-amount"]} STX</p>
-                <p>Winnings: {getWinnings(game)} STX</p>
               </div>
               <div>
                 <h3>Move History</h3>
