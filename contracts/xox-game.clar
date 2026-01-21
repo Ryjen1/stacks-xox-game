@@ -119,6 +119,43 @@
     (ok game-id)
 ))
 
+(define-public (claim-timeout (game-id uint))
+    (let (
+        ;; Load the game data for the game being claimed, throw an error if Game ID is invalid
+        (original-game-data (unwrap! (map-get? games game-id) (err ERR_GAME_NOT_FOUND)))
+        ;; Get the player whose turn it currently is (the one who should have moved)
+        (current-turn-player (if (get is-player-one-turn original-game-data) (get player-one original-game-data) (unwrap! (get player-two original-game-data) (err ERR_GAME_NOT_FOUND))))
+        ;; The opponent is the one claiming timeout
+        (opponent (if (get is-player-one-turn original-game-data) (unwrap! (get player-two original-game-data) (err ERR_GAME_NOT_FOUND)) (get player-one original-game-data)))
+        ;; Check if enough blocks have passed
+        (blocks-passed (- stacks-block-height (get last-move-block-height original-game-data)))
+    )
+
+    ;; Ensure that the game is not already finished
+    (asserts! (not (get finished original-game-data)) (err ERR_GAME_ALREADY_FINISHED))
+    ;; Ensure that the caller is the opponent of the current turn player
+    (asserts! (is-eq opponent contract-caller) (err ERR_NOT_OPPONENT))
+    ;; Ensure that the timeout period has been reached
+    (asserts! (>= blocks-passed TIMEOUT_BLOCKS) (err ERR_TIMEOUT_NOT_REACHED))
+
+    ;; Transfer all bets to the opponent (timeout claimer)
+    (try! (as-contract (stx-transfer? (* u2 (get bet-amount original-game-data)) tx-sender opponent)))
+    ;; Update winner and loser stats
+    (update-winner-stats opponent (* u2 (get bet-amount original-game-data)))
+    (update-loser-stats current-turn-player)
+
+    ;; Update the games map with finished game and winner
+    (map-set games game-id (merge original-game-data {
+        winner: (some opponent),
+        finished: true
+    }))
+
+    ;; Log the timeout claim
+    (print { action: "claim-timeout", data: { game-id: game-id, winner: opponent }})
+    ;; Return the Game ID
+    (ok game-id)
+))
+
 (define-public (play (game-id uint) (move-index uint) (move uint))
     (let (
         ;; Load the game data for the game being joined, throw an error if Game ID is invalid

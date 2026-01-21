@@ -1,4 +1,4 @@
-import { createNewGame, createRematchGame, acceptRematchGame, joinGame, Move, play, Game } from "@/lib/contract";
+import { createNewGame, createRematchGame, acceptRematchGame, joinGame, Move, play, claimTimeout, Game } from "@/lib/contract";
 import { getStxBalance } from "@/lib/stx-utils";
 import {
   AppConfig,
@@ -23,7 +23,8 @@ export type TransactionType =
   | "joinGame"
   | "playGame"
   | "rematchGame"
-  | "acceptRematch";
+  | "acceptRematch"
+  | "claimTimeout";
 
 interface TransactionState {
   type: TransactionType | null;
@@ -83,6 +84,7 @@ export function useStacks() {
       playGame: "Move submitted successfully!",
       rematchGame: "Rematch requested successfully!",
       acceptRematch: "Rematch accepted successfully!",
+      claimTimeout: "Timeout claimed successfully!",
     };
 
     showNotification(messages[type], "success");
@@ -273,7 +275,7 @@ export function useStacks() {
 
     try {
       if (!userData) throw new Error("User not connected");
-      
+
       startTransaction("acceptRematch");
       const txOptions = await acceptRematchGame(gameId, moveIndex, move);
       await openContractCall({
@@ -295,6 +297,33 @@ export function useStacks() {
     }
   }
 
+  async function handleClaimTimeout(gameId: number) {
+    if (typeof window === "undefined") return;
+
+    try {
+      if (!userData) throw new Error("User not connected");
+
+      startTransaction("claimTimeout");
+      const txOptions = await claimTimeout(gameId);
+      await openContractCall({
+        ...txOptions,
+        appDetails,
+        onFinish: (data) => {
+          console.log(data);
+          completeTransaction("claimTimeout", data.txId);
+        },
+        onCancel: () => {
+          failTransaction("claimTimeout", "Transaction cancelled");
+        },
+        postConditionMode: PostConditionMode.Allow,
+      });
+    } catch (_err) {
+      const err = _err as Error;
+      console.error(err);
+      failTransaction("claimTimeout", err.message);
+    }
+  }
+
   return {
     userData,
     stxBalance,
@@ -305,6 +334,7 @@ export function useStacks() {
     handlePlayGame,
     handleRematchGame,
     handleAcceptRematch,
+    handleClaimTimeout,
     transactionState,
     notification,
     hideNotification,
