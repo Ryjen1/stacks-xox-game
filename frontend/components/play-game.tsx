@@ -62,8 +62,8 @@ export function PlayGame({ game }: PlayGameProps) {
           playSound('defeat');
         }
       } else {
-        // Draw - play victory sound for now (could add draw.mp3 later)
-        playSound('victory');
+        // Draw - play defeat sound as a neutral outcome
+        playSound('defeat');
       }
     }
   }, [game.finished, game.winner]);
