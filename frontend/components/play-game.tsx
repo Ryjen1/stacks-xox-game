@@ -197,7 +197,7 @@ export function PlayGame({ game }: PlayGameProps) {
         </div>
       )}
 
-      {/* Rematch functionality - show after game ends */}
+      {/* Rematch functionality - creates a new on-chain game with swapped player roles */}
       {isGameOver && (
         <div className="mt-4 p-4 border rounded-lg text-sm sm:text-base">
           <h3 className="font-semibold mb-2 text-base sm:text-lg">Game Over!</h3>
