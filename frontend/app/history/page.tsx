@@ -43,7 +43,7 @@ export default function HistoryPage() {
   };
 
   const getWinnings = (game: Game) => {
-    return game["bet-amount"] * 2;
+    return game.winner ? game["bet-amount"] * 2 : 0; // No winnings for draws
   };
 
   return (
