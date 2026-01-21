@@ -36,6 +36,15 @@ export function PlayGame({ game }: PlayGameProps) {
     audio.play().catch(() => {}); // Ignore errors if audio fails
   };
 
+  // Function to get the appropriate sound for game end
+  const getGameEndSound = (game: Game) => {
+    if (game.winner) {
+      return game.winner === userData?.profile.stxAddress.testnet ? 'victory' : 'defeat';
+    } else {
+      return 'defeat'; // Draw uses defeat sound
+    }
+  };
+
   if (!userData) return null;
 
   const isPlayerOne =
@@ -55,17 +64,8 @@ export function PlayGame({ game }: PlayGameProps) {
   // Play win/lose/draw sounds when game ends
   useEffect(() => {
     if (game.finished) {
-      if (game.winner) {
-        if (game.winner === userData.profile.stxAddress.testnet) {
-          playSound('victory');
-        } else {
-          playSound('defeat');
-        }
-      } else {
-        // Draw - play defeat sound as a neutral outcome
-        // TODO: Add dedicated draw.mp3 sound file for better UX
-        playSound('defeat');
-      }
+      const sound = getGameEndSound(game);
+      playSound(sound);
     }
   }, [game.finished, game.winner]);
 
