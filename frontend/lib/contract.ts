@@ -207,6 +207,17 @@ export async function play(gameId: number, moveIndex: number, move: Move) {
   return txOptions;
 }
 
+export async function claimTimeout(gameId: number) {
+  const txOptions = {
+    contractAddress: CONTRACT_ADDRESS,
+    contractName: CONTRACT_NAME,
+    functionName: "claim-timeout",
+    functionArgs: [uintCV(gameId)],
+  };
+
+  return txOptions;
+}
+
 export async function getPlayerStats(playerAddress: string): Promise<PlayerStats | null> {
   const playerStatsCV = await fetchCallReadOnlyFunction({
     contractAddress: CONTRACT_ADDRESS,

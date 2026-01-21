@@ -41,6 +41,16 @@ function play(moveIndex: number, move: number, user: string) {
   );
 }
 
+// Helper function to claim timeout for a game on behalf of the `user` address
+function claimTimeout(user: string) {
+  return simnet.callPublicFn(
+    "stacks-xox-game",
+    "claim-timeout",
+    [Cl.uint(0)],
+    user
+  );
+}
+
 describe("Tic Tac Toe Tests", () => {
   it("allows game creation", () => {
     const { result, events } = createGame(100, 0, 1, alice);
@@ -226,6 +236,77 @@ describe("Tic Tac Toe Tests", () => {
     // Check that bets are returned: 2 events for returning bets
     expect(events[1].type).toBe('stx_transfer_event');
     expect(events[2].type).toBe('stx_transfer_event');
+  });
+
+  it("allows claiming timeout when opponent doesn't move", () => {
+    createGame(100, 0, 1, alice);
+    joinGame(1, 2, bob);
+    play(2, 1, alice); // Alice plays, now Bob's turn
+
+    // Advance blocks to simulate timeout (TIMEOUT_BLOCKS = 10)
+    simnet.mineEmptyBlocks(10);
+
+    // Bob claims timeout
+    const { result, events } = claimTimeout(bob);
+
+    expect(result).toBeOk(Cl.uint(0));
+    expect(events.length).toBe(2); // print_event and stx_transfer_event
+
+    const gameData = simnet.getMapEntry("stacks-xox-game", "games", Cl.uint(0));
+    expect(gameData).toBeSome(
+      Cl.tuple({
+        "player-one": Cl.principal(alice),
+        "player-two": Cl.some(Cl.principal(bob)),
+        "is-player-one-turn": Cl.bool(false), // Alice's turn, but timeout claimed by Bob
+        "bet-amount": Cl.uint(100),
+        board: Cl.list([
+          Cl.uint(1), Cl.uint(2), Cl.uint(1),
+          Cl.uint(0), Cl.uint(0), Cl.uint(0),
+          Cl.uint(0), Cl.uint(0), Cl.uint(0),
+        ]),
+        winner: Cl.some(Cl.principal(bob)),
+        finished: Cl.bool(true),
+        "last-move-block-height": Cl.uint(3), // From Alice's last move
+      })
+    );
+  });
+
+  it("does not allow claiming timeout before timeout period", () => {
+    createGame(100, 0, 1, alice);
+    joinGame(1, 2, bob);
+    play(2, 1, alice); // Alice plays, now Bob's turn
+
+    // Advance blocks but not enough for timeout
+    simnet.mineEmptyBlocks(5);
+
+    // Bob tries to claim timeout too early
+    const { result } = claimTimeout(bob);
+    expect(result).toBeErr(Cl.uint(106)); // ERR_TIMEOUT_NOT_REACHED
+  });
+
+  it("does not allow claiming timeout on finished game", () => {
+    createGame(100, 0, 1, alice);
+    joinGame(3, 2, bob);
+    play(1, 1, alice);
+    play(4, 2, bob);
+    play(2, 1, alice); // Alice wins, game finished
+
+    // Try to claim timeout on finished game
+    const { result } = claimTimeout(bob);
+    expect(result).toBeErr(Cl.uint(105)); // ERR_GAME_ALREADY_FINISHED
+  });
+
+  it("does not allow non-opponent to claim timeout", () => {
+    createGame(100, 0, 1, alice);
+    joinGame(1, 2, bob);
+    play(2, 1, alice); // Alice plays, now Bob's turn
+
+    // Advance blocks for timeout
+    simnet.mineEmptyBlocks(10);
+
+    // Alice tries to claim timeout (she's not the opponent whose turn it is)
+    const { result } = claimTimeout(alice);
+    expect(result).toBeErr(Cl.uint(107)); // ERR_NOT_OPPONENT
   });
 });
 

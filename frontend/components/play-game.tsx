@@ -20,6 +20,7 @@ export function PlayGame({ game }: PlayGameProps) {
     handlePlayGame,
     handleRematchGame,
     handleAcceptRematch,
+    handleClaimTimeout,
     transactionState,
     notification,
     hideNotification
@@ -190,7 +191,23 @@ export function PlayGame({ game }: PlayGameProps) {
       )}
 
       {isJoinedAlready && !isMyTurn && !isGameOver && (
-        <div className="text-gray-500 text-sm sm:text-base">Waiting for opponent to play...</div>
+        <div className="flex flex-col gap-2">
+          <div className="text-gray-500 text-sm sm:text-base">Waiting for opponent to play...</div>
+          <button
+            onClick={() => handleClaimTimeout(game.id)}
+            disabled={transactionState.isPending}
+            className="bg-red-500 disabled:bg-gray-500 disabled:cursor-not-allowed text-white px-6 py-3 min-h-12 rounded flex items-center justify-center gap-2 text-base"
+          >
+            {transactionState.isPending && transactionState.type === "claimTimeout" ? (
+              <>
+                <LoadingSpinner size="sm" />
+                Claiming Timeout...
+              </>
+            ) : (
+              "Claim Timeout"
+            )}
+          </button>
+        </div>
       )}
 
       {/* Rematch functionality - show after game ends */}
