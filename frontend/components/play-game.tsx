@@ -63,6 +63,7 @@ export function PlayGame({ game }: PlayGameProps) {
         }
       } else {
         // Draw - play defeat sound as a neutral outcome
+        // TODO: Add dedicated draw.mp3 sound file for better UX
         playSound('defeat');
       }
     }
