@@ -69,6 +69,7 @@ stacks-xox-game/
 - **Multiplayer**: Create and join games with other players
 - **Real-time Updates**: Live game state synchronization
 - **Stacks Connect Integration**: Seamless wallet connection
+- **Sound Effects**: Audio feedback for moves, victories, defeats, and draws
 - **Testnet Ready**: Deploy and test on Stacks testnet
 
 ## 🎯 Game Rules
