@@ -37,11 +37,12 @@ export function PlayGame({ game }: PlayGameProps) {
   };
 
   // Function to get the appropriate sound for game end
+  // Returns 'victory' for wins, 'defeat' for losses, and 'draw' for ties
   const getGameEndSound = (game: Game) => {
     if (game.winner) {
       return game.winner === userData?.profile.stxAddress.testnet ? 'victory' : 'defeat';
     } else {
-      return 'draw'; // Draw has its own sound
+      return 'draw'; // Draw has its own neutral sound effect
     }
   };
 
