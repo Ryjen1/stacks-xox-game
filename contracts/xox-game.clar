@@ -36,6 +36,7 @@
         winner: (optional principal),
         finished: bool,
         last-move-block-height: uint,
+        ;; moves: list of all moves made in the game as {move-index, move} tuples
         moves: (list 9 {move-index: uint, move: uint})
     }
 )
