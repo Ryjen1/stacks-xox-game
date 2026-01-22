@@ -42,7 +42,7 @@
     )
 
     ;; Ensure that user has put up a bet amount of at least the minimum
-    (asserts! (> bet-amount u0) (err ERR_MIN_BET_AMOUNT))
+    (asserts! (>= bet-amount u100) (err ERR_MIN_BET_AMOUNT))
     ;; Ensure that the move being played is an `X`, not an `O`
     (asserts! (is-eq move u1) (err ERR_INVALID_MOVE))
     ;; Ensure that the move meets validity requirements
