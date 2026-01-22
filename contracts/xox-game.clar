@@ -187,7 +187,8 @@
             is-player-one-turn: (not is-player-one-turn),
             winner: (if is-now-winner (some player-turn) none),
             finished: is-finished,
-            last-move-block-height: stacks-block-height
+            last-move-block-height: stacks-block-height,
+            moves: (append (get moves original-game-data) {move-index: move-index, move: move})
         }))
     )
 
