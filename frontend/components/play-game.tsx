@@ -36,6 +36,15 @@ export function PlayGame({ game }: PlayGameProps) {
     audio.play().catch(() => {}); // Ignore errors if audio fails
   };
 
+  // Function to get the appropriate sound for game end
+  const getGameEndSound = (game: Game) => {
+    if (game.winner) {
+      return game.winner === userData?.profile.stxAddress.testnet ? 'victory' : 'defeat';
+    } else {
+      return 'defeat'; // Draw uses defeat sound
+    }
+  };
+
   if (!userData) return null;
 
   const isPlayerOne =

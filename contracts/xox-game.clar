@@ -36,6 +36,7 @@
         winner: (optional principal),
         finished: bool,
         last-move-block-height: uint,
+        ;; moves: list of all moves made in the game as {move-index, move} tuples
         moves: (list 9 {move-index: uint, move: uint})
     }
 )
@@ -48,7 +49,7 @@
         (starting-board (list u0 u0 u0 u0 u0 u0 u0 u0 u0))
         ;; Updated board with the starting move played by the game creator (X)
         (game-board (unwrap! (replace-at? starting-board move-index move) (err ERR_INVALID_MOVE)))
-        ;; Create the game data tuple (player one address, bet amount, game board, and mark next turn to be player two's turn)
+        ;; Create the game data tuple with initial move tracking
         (game-data {
             player-one: contract-caller,
             player-two: none,
@@ -57,7 +58,8 @@
             board: game-board,
             winner: none,
             finished: false,
-            last-move-block-height: stacks-block-height
+            last-move-block-height: stacks-block-height,
+            moves: (list {move-index: move-index, move: move})
         })
     )
 
@@ -96,7 +98,8 @@
             player-two: (some contract-caller),
             is-player-one-turn: true,
             finished: false,
-            last-move-block-height: stacks-block-height
+            last-move-block-height: stacks-block-height,
+            moves: (append (get moves original-game-data) {move-index: move-index, move: move})
         }))
     )
 
@@ -185,7 +188,8 @@
             is-player-one-turn: (not is-player-one-turn),
             winner: (if is-now-winner (some player-turn) none),
             finished: is-finished,
-            last-move-block-height: stacks-block-height
+            last-move-block-height: stacks-block-height,
+            moves: (append (get moves original-game-data) {move-index: move-index, move: move})
         }))
     )
 
