@@ -97,7 +97,8 @@
             player-two: (some contract-caller),
             is-player-one-turn: true,
             finished: false,
-            last-move-block-height: stacks-block-height
+            last-move-block-height: stacks-block-height,
+            moves: (append (get moves original-game-data) {move-index: move-index, move: move})
         }))
     )
 
