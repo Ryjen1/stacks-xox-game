@@ -38,7 +38,7 @@ export default function HistoryPage() {
   );
 
   const getLoser = (game: Game) => {
-    if (!game.winner) return null;
+    if (!game.winner) return null; // Draw, no loser
     return game.winner === game["player-one"] ? game["player-two"] : game["player-one"];
   };
 

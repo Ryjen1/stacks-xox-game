@@ -64,8 +64,16 @@ export function PlayGame({ game }: PlayGameProps) {
   // Play win/lose/draw sounds when game ends
   useEffect(() => {
     if (game.finished) {
-      const sound = getGameEndSound(game);
-      playSound(sound);
+      if (game.winner) {
+        if (game.winner === userData.profile.stxAddress.testnet) {
+          playSound('victory');
+        } else {
+          playSound('defeat');
+        }
+      } else {
+        // Draw - play defeat sound as a neutral outcome
+        playSound('defeat');
+      }
     }
   }, [game.finished, game.winner]);
 
