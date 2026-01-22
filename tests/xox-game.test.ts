@@ -76,8 +76,8 @@ describe("Tic Tac Toe Tests", () => {
     expect(events.length).toBe(1); // print_event
   });
 
-  it("does not allow creating a game with a bet amount of 0", () => {
-    const { result } = createGame(0, 0, 1, alice);
+  it("does not allow creating a game with a bet amount less than 100", () => {
+    const { result } = createGame(99, 0, 1, alice);
     expect(result).toBeErr(Cl.uint(100));
   });
 
