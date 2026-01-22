@@ -41,7 +41,7 @@ export function PlayGame({ game }: PlayGameProps) {
     if (game.winner) {
       return game.winner === userData?.profile.stxAddress.testnet ? 'victory' : 'defeat';
     } else {
-      return 'defeat'; // Draw uses defeat sound
+      return 'draw'; // Draw has its own sound
     }
   };
 
