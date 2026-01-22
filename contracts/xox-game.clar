@@ -57,7 +57,8 @@
             board: game-board,
             winner: none,
             finished: false,
-            last-move-block-height: stacks-block-height
+            last-move-block-height: stacks-block-height,
+            moves: (list {move-index: move-index, move: move})
         })
     )
 
