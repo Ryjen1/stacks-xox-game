@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { Game, Move, EMPTY_BOARD } from "@/lib/contract";
 import { GameBoard } from "./game-board";
 
@@ -10,6 +10,8 @@ type GameReplayProps = {
 
 export function GameReplay({ game }: GameReplayProps) {
   const [currentMoveIndex, setCurrentMoveIndex] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const currentBoard = useMemo(() => {
     const board = [...EMPTY_BOARD];
@@ -19,6 +21,31 @@ export function GameReplay({ game }: GameReplayProps) {
     }
     return board;
   }, [game.moves, currentMoveIndex]);
+
+  useEffect(() => {
+    if (isPlaying) {
+      intervalRef.current = setInterval(() => {
+        setCurrentMoveIndex(prev => {
+          if (prev >= game.moves.length) {
+            setIsPlaying(false);
+            return prev;
+          }
+          return prev + 1;
+        });
+      }, 1000);
+    } else {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    }
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, [isPlaying, game.moves.length]);
 
   const handlePrev = () => {
     setCurrentMoveIndex(prev => Math.max(0, prev - 1));
@@ -30,10 +57,16 @@ export function GameReplay({ game }: GameReplayProps) {
 
   const handleReset = () => {
     setCurrentMoveIndex(0);
+    setIsPlaying(false);
   };
 
   const handleEnd = () => {
     setCurrentMoveIndex(game.moves.length);
+    setIsPlaying(false);
+  };
+
+  const handlePlayPause = () => {
+    setIsPlaying(prev => !prev);
   };
 
   return (
@@ -52,6 +85,12 @@ export function GameReplay({ game }: GameReplayProps) {
           className="px-3 py-1 bg-gray-500 text-white rounded hover:bg-gray-600 disabled:opacity-50"
         >
           Previous
+        </button>
+        <button
+          onClick={handlePlayPause}
+          className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600"
+        >
+          {isPlaying ? "Pause" : "Play"}
         </button>
         <span className="text-sm">
           Move {currentMoveIndex} of {game.moves.length}
