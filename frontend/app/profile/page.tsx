@@ -1,11 +1,24 @@
-import { getPlayerStats } from "@/lib/contract";
+"use client";
+
+import { getPlayerStats, PlayerStats } from "@/lib/contract";
 import { useStacks } from "@/hooks/use-stacks";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
 export const dynamic = "force-dynamic";
 
-export default async function ProfilePage() {
+export default function ProfilePage() {
   const { userData } = useStacks();
+  const [playerStats, setPlayerStats] = useState<PlayerStats | null>(null);
+
+  useEffect(() => {
+    if (userData) {
+      const playerAddress = userData.profile.stxAddress.testnet;
+      getPlayerStats(playerAddress).then(setPlayerStats);
+    }
+  }, [userData]);
+
+  const playerAddress = userData?.profile.stxAddress.testnet;
 
   if (!userData) {
     return (
@@ -20,8 +33,9 @@ export default async function ProfilePage() {
     );
   }
 
-  const playerAddress = userData.profile.stxAddress.testnet;
-  const playerStats = await getPlayerStats(playerAddress);
+  if (!playerStats) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <section className="flex flex-col items-center py-20">
