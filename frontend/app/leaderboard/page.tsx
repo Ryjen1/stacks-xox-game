@@ -1,14 +1,20 @@
+"use client";
+
 import { getAllPlayerStats } from "@/lib/contract";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export const dynamic = "force-dynamic";
 
 type SortOption = "wins" | "stxWon" | "winRate";
 
-export default async function LeaderboardPage() {
+export default function LeaderboardPage() {
   const [sortBy, setSortBy] = useState<SortOption>("wins");
-  const allPlayerStats = await getAllPlayerStats();
+  const [allPlayerStats, setAllPlayerStats] = useState([]);
+
+  useEffect(() => {
+    getAllPlayerStats().then(setAllPlayerStats);
+  }, []);
 
   // Calculate win rate for each player
   const playersWithWinRate = allPlayerStats.map((stats) => ({
