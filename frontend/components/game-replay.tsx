@@ -73,51 +73,59 @@ export function GameReplay({ game }: GameReplayProps) {
   return (
     <div className="mt-4 p-4 border rounded-lg bg-gray-50">
       <h4 className="text-lg font-semibold mb-2">Game Replay</h4>
-      <div className="flex items-center gap-4 mb-4">
-        <button
-          onClick={handleReset}
-          className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
-        >
-          Start
-        </button>
-        <button
-          onClick={handlePrev}
-          disabled={currentMoveIndex === 0}
-          className="px-3 py-1 bg-gray-500 text-white rounded hover:bg-gray-600 disabled:opacity-50"
-        >
-          Previous
-        </button>
-        <button
-          onClick={handlePlayPause}
-          className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600"
-        >
-          {isPlaying ? "Pause" : "Play"}
-        </button>
-        <select
-          value={speed}
-          onChange={(e) => setSpeed(Number(e.target.value))}
-          className="px-2 py-1 border rounded"
-        >
-          <option value={2000}>Slow</option>
-          <option value={1000}>Normal</option>
-          <option value={500}>Fast</option>
-        </select>
-        <span className="text-sm">
-          Move {currentMoveIndex} of {game.moves.length}
-        </span>
-        <button
-          onClick={handleNext}
-          disabled={currentMoveIndex === game.moves.length}
-          className="px-3 py-1 bg-gray-500 text-white rounded hover:bg-gray-600 disabled:opacity-50"
-        >
-          Next
-        </button>
-        <button
-          onClick={handleEnd}
-          className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
-        >
-          End
-        </button>
+      <div className="mb-4">
+        <div className="flex items-center gap-4 mb-2">
+          <button
+            onClick={handleReset}
+            className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+          >
+            Start
+          </button>
+          <button
+            onClick={handlePrev}
+            disabled={currentMoveIndex === 0}
+            className="px-3 py-1 bg-gray-500 text-white rounded hover:bg-gray-600 disabled:opacity-50"
+          >
+            Previous
+          </button>
+          <button
+            onClick={handlePlayPause}
+            className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600"
+          >
+            {isPlaying ? "Pause" : "Play"}
+          </button>
+          <select
+            value={speed}
+            onChange={(e) => setSpeed(Number(e.target.value))}
+            className="px-2 py-1 border rounded"
+          >
+            <option value={2000}>Slow</option>
+            <option value={1000}>Normal</option>
+            <option value={500}>Fast</option>
+          </select>
+          <span className="text-sm">
+            Move {currentMoveIndex} of {game.moves.length}
+          </span>
+          <button
+            onClick={handleNext}
+            disabled={currentMoveIndex === game.moves.length}
+            className="px-3 py-1 bg-gray-500 text-white rounded hover:bg-gray-600 disabled:opacity-50"
+          >
+            Next
+          </button>
+          <button
+            onClick={handleEnd}
+            className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+          >
+            End
+          </button>
+        </div>
+        <div className="w-full bg-gray-200 rounded-full h-2">
+          <div
+            className="bg-blue-600 h-2 rounded-full"
+            style={{ width: `${(currentMoveIndex / game.moves.length) * 100}%` }}
+          ></div>
+        </div>
       </div>
       <GameBoard board={currentBoard} />
     </div>
