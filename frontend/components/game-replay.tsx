@@ -11,6 +11,7 @@ type GameReplayProps = {
 export function GameReplay({ game }: GameReplayProps) {
   const [currentMoveIndex, setCurrentMoveIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [speed, setSpeed] = useState(1000);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const currentBoard = useMemo(() => {
@@ -32,7 +33,7 @@ export function GameReplay({ game }: GameReplayProps) {
           }
           return prev + 1;
         });
-      }, 1000);
+      }, speed);
     } else {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
@@ -45,7 +46,7 @@ export function GameReplay({ game }: GameReplayProps) {
         clearInterval(intervalRef.current);
       }
     };
-  }, [isPlaying, game.moves.length]);
+  }, [isPlaying, game.moves.length, speed]);
 
   const handlePrev = () => {
     setCurrentMoveIndex(prev => Math.max(0, prev - 1));
@@ -92,6 +93,15 @@ export function GameReplay({ game }: GameReplayProps) {
         >
           {isPlaying ? "Pause" : "Play"}
         </button>
+        <select
+          value={speed}
+          onChange={(e) => setSpeed(Number(e.target.value))}
+          className="px-2 py-1 border rounded"
+        >
+          <option value={2000}>Slow</option>
+          <option value={1000}>Normal</option>
+          <option value={500}>Fast</option>
+        </select>
         <span className="text-sm">
           Move {currentMoveIndex} of {game.moves.length}
         </span>
