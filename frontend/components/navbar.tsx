@@ -32,6 +32,9 @@ export function Navbar() {
         <Link href="/leaderboard" className="text-gray-300 hover:text-gray-50 text-sm sm:text-base">
           Leaderboard
         </Link>
+        <a href="/proposed_features_issue.md" className="text-gray-300 hover:text-gray-50 text-sm sm:text-base" target="_blank" rel="noopener noreferrer">
+          Proposed Features
+        </a>
       </div>
 
       {/* Mobile Menu Button */}
@@ -93,6 +96,9 @@ export function Navbar() {
             <Link href="/leaderboard" className="text-gray-300 hover:text-gray-50" onClick={() => setIsMenuOpen(false)}>
               Leaderboard
             </Link>
+            <a href="/proposed_features_issue.md" className="text-gray-300 hover:text-gray-50" target="_blank" rel="noopener noreferrer" onClick={() => setIsMenuOpen(false)}>
+              Proposed Features
+            </a>
           </div>
         </div>
       )}
