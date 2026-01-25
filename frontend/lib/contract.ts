@@ -1,11 +1,13 @@
 import { STACKS_TESTNET } from "@stacks/network";
 import {
+  boolCV,
   BooleanCV,
   cvToValue,
   fetchCallReadOnlyFunction,
   ListCV,
   OptionalCV,
   PrincipalCV,
+  standardPrincipalCV,
   TupleCV,
   uintCV,
   UIntCV,
@@ -63,79 +65,90 @@ export const EMPTY_BOARD = [
 ];
 
 export async function getAllGames() {
-  // Fetch the latest-game-id from the contract
-  const latestGameIdCV = (await fetchCallReadOnlyFunction({
-    contractAddress: CONTRACT_ADDRESS,
-    contractName: CONTRACT_NAME,
-    functionName: "get-latest-game-id",
-    functionArgs: [],
-    senderAddress: CONTRACT_ADDRESS,
-    network: STACKS_TESTNET,
-  })) as UIntCV;
+  try {
+    // Fetch the latest-game-id from the contract
+    const latestGameIdCV = (await fetchCallReadOnlyFunction({
+      contractAddress: CONTRACT_ADDRESS,
+      contractName: CONTRACT_NAME,
+      functionName: "get-latest-game-id",
+      functionArgs: [],
+      senderAddress: CONTRACT_ADDRESS,
+      network: STACKS_TESTNET,
+    })) as UIntCV;
 
-  // Convert the uintCV to a JS/TS number type
-  const latestGameId = parseInt(latestGameIdCV.value.toString());
+    // Convert the uintCV to a JS/TS number type
+    const latestGameId = parseInt(latestGameIdCV.value.toString());
 
-  // Loop from 0 to latestGameId-1 and fetch the game details for each game
-  const games: Game[] = [];
-  for (let i = 0; i < latestGameId; i++) {
-    const game = await getGame(i);
-    if (game) games.push(game);
+    // Loop from 0 to latestGameId-1 and fetch the game details for each game
+    const games: Game[] = [];
+    for (let i = 0; i < latestGameId; i++) {
+      const game = await getGame(i);
+      if (game) games.push(game);
+    }
+    return games;
+  } catch (error) {
+    console.error('Error fetching all games:', error);
+    throw new Error('Failed to fetch games');
   }
-  return games;
 }
 
 export async function getGame(gameId: number) {
-  // Use the get-game read only function to fetch the game details for the given gameId
-  const gameDetails = await fetchCallReadOnlyFunction({
-    contractAddress: CONTRACT_ADDRESS,
-    contractName: CONTRACT_NAME,
-    functionName: "get-game",
-    functionArgs: [uintCV(gameId)],
-    senderAddress: CONTRACT_ADDRESS,
-    network: STACKS_TESTNET,
-  });
+  try {
+    // Use the get-game read only function to fetch the game details for the given gameId
+    const gameDetails = await fetchCallReadOnlyFunction({
+      contractAddress: CONTRACT_ADDRESS,
+      contractName: CONTRACT_NAME,
+      functionName: "get-game",
+      functionArgs: [uintCV(gameId)],
+      senderAddress: CONTRACT_ADDRESS,
+      network: STACKS_TESTNET,
+    });
 
-  const responseCV = gameDetails as OptionalCV<TupleCV<GameCV>>;
-  // If we get back a none, then the game does not exist and we return null
-  if (responseCV.type === "none") return null;
-  // If we get back a value that is not a tuple, something went wrong and we return null
-  if (responseCV.value.type !== "tuple") return null;
+    const responseCV = gameDetails as OptionalCV<TupleCV<GameCV>>;
+    // If we get back a none, then the game does not exist and we return null
+    if (responseCV.type === "none") return null;
+    // If we get back a value that is not a tuple, something went wrong and we return null
+    if (responseCV.value.type !== "tuple") return null;
 
-  // If we got back a GameCV tuple, we can convert it to a Game object
-  const gameCV = responseCV.value.value;
+    // If we got back a GameCV tuple, we can convert it to a Game object
+    const gameCV = responseCV.value.value;
 
-  const game: Game = {
-    id: gameId,
-    "player-one": gameCV["player-one"].value,
-    "player-two":
-      gameCV["player-two"].type === "some"
-        ? gameCV["player-two"].value.value
-        : null,
-    "is-player-one-turn": cvToValue(gameCV["is-player-one-turn"]),
-    "bet-amount": parseInt(gameCV["bet-amount"].value.toString()),
-    board: gameCV["board"].value.map((cell: UIntCV) => parseInt(cell.value.toString())),
-    winner:
-      gameCV["winner"].type === "some" ? gameCV["winner"].value.value : null,
-    finished: cvToValue(gameCV["finished"]),
-    moves: gameCV["moves"].value.map((moveCV: TupleCV<{ "move-index": UIntCV, move: UIntCV }>) => ({
-      moveIndex: parseInt(moveCV.value["move-index"].value.toString()),
-      move: parseInt(moveCV.value.move.value.toString())
-    })),
-  };
-  return game;
+    const game: Game = {
+      id: gameId,
+      "player-one": gameCV["player-one"].value,
+      "player-two":
+        gameCV["player-two"].type === "some"
+          ? gameCV["player-two"].value.value
+          : null,
+      "is-player-one-turn": cvToValue(gameCV["is-player-one-turn"]),
+      "bet-amount": parseInt(gameCV["bet-amount"].value.toString()),
+      board: gameCV["board"].value.map((cell: UIntCV) => parseInt(cell.value.toString())),
+      winner:
+        gameCV["winner"].type === "some" ? gameCV["winner"].value.value : null,
+      finished: cvToValue(gameCV["finished"]),
+      moves: gameCV["moves"].value.map((moveCV: TupleCV<{ "move-index": UIntCV, move: UIntCV }>) => ({
+        moveIndex: parseInt(moveCV.value["move-index"].value.toString()),
+        move: parseInt(moveCV.value.move.value.toString())
+      })),
+    };
+    return game;
+  } catch (error) {
+    console.error(`Error fetching game ${gameId}:`, error);
+    throw new Error(`Failed to fetch game ${gameId}`);
+  }
 }
 
 export async function createNewGame(
   betAmount: number,
   moveIndex: number,
-  move: Move
+  move: Move,
+  isAiGame: boolean
 ) {
   const txOptions = {
     contractAddress: CONTRACT_ADDRESS,
     contractName: CONTRACT_NAME,
     functionName: "create-game",
-    functionArgs: [uintCV(betAmount), uintCV(moveIndex), uintCV(move)],
+    functionArgs: [uintCV(betAmount), uintCV(moveIndex), uintCV(move), boolCV(isAiGame)],
   };
 
   return txOptions;
@@ -219,67 +232,77 @@ export async function claimTimeout(gameId: number) {
 }
 
 export async function getPlayerStats(playerAddress: string): Promise<PlayerStats | null> {
-  const playerStatsCV = await fetchCallReadOnlyFunction({
-    contractAddress: CONTRACT_ADDRESS,
-    contractName: CONTRACT_NAME,
-    functionName: "get-player-stats",
-    functionArgs: [PrincipalCV.fromString(playerAddress)],
-    senderAddress: CONTRACT_ADDRESS,
-    network: STACKS_TESTNET,
-  });
+  try {
+    const playerStatsCV = await fetchCallReadOnlyFunction({
+      contractAddress: CONTRACT_ADDRESS,
+      contractName: CONTRACT_NAME,
+      functionName: "get-player-stats",
+      functionArgs: [standardPrincipalCV(playerAddress)],
+      senderAddress: CONTRACT_ADDRESS,
+      network: STACKS_TESTNET,
+    });
 
-  const responseCV = playerStatsCV as OptionalCV<TupleCV<{
-    wins: UIntCV;
-    losses: UIntCV;
-    "stx-won": UIntCV;
-    "games-played": UIntCV;
-  }>>;
+    const responseCV = playerStatsCV as OptionalCV<TupleCV<{
+      wins: UIntCV;
+      losses: UIntCV;
+      "stx-won": UIntCV;
+      "games-played": UIntCV;
+    }>>;
 
-  if (responseCV.type === "none") return null;
+    if (responseCV.type === "none") return null;
 
-  if (responseCV.value.type !== "tuple") return null;
+    if (responseCV.value.type !== "tuple") return null;
 
-  const statsCV = responseCV.value.value;
+    const statsCV = responseCV.value.value;
 
-  return {
-    wins: parseInt(statsCV.wins.value.toString()),
-    losses: parseInt(statsCV.losses.value.toString()),
-    stxWon: parseInt(statsCV["stx-won"].value.toString()),
-    gamesPlayed: parseInt(statsCV["games-played"].value.toString()),
-  };
+    return {
+      wins: parseInt(statsCV.wins.value.toString()),
+      losses: parseInt(statsCV.losses.value.toString()),
+      stxWon: parseInt(statsCV["stx-won"].value.toString()),
+      gamesPlayed: parseInt(statsCV["games-played"].value.toString()),
+    };
+  } catch (error) {
+    console.error(`Error fetching player stats for ${playerAddress}:`, error);
+    throw new Error(`Failed to fetch player stats for ${playerAddress}`);
+  }
 }
 
 export async function getAllPlayerStats(): Promise<PlayerStats[]> {
-  const allStatsCV = await fetchCallReadOnlyFunction({
-    contractAddress: CONTRACT_ADDRESS,
-    contractName: CONTRACT_NAME,
-    functionName: "get-all-player-stats",
-    functionArgs: [],
-    senderAddress: CONTRACT_ADDRESS,
-    network: STACKS_TESTNET,
-  });
+  try {
+    const allStatsCV = await fetchCallReadOnlyFunction({
+      contractAddress: CONTRACT_ADDRESS,
+      contractName: CONTRACT_NAME,
+      functionName: "get-all-player-stats",
+      functionArgs: [],
+      senderAddress: CONTRACT_ADDRESS,
+      network: STACKS_TESTNET,
+    });
 
-  const responseCV = allStatsCV as ListCV<TupleCV<{
-    wins: UIntCV;
-    losses: UIntCV;
-    "stx-won": UIntCV;
-    "games-played": UIntCV;
-  }>>;
+    const responseCV = allStatsCV as ListCV<TupleCV<{
+      wins: UIntCV;
+      losses: UIntCV;
+      "stx-won": UIntCV;
+      "games-played": UIntCV;
+    }>>;
 
-  if (responseCV.type !== "list") return [];
+    if (responseCV.type !== "list") return [];
 
-  return responseCV.value.map((statsCV: TupleCV<{
-    wins: UIntCV;
-    losses: UIntCV;
-    "stx-won": UIntCV;
-    "games-played": UIntCV;
-  }>) => {
-    const stats = statsCV.value;
-    return {
-      wins: parseInt(stats.wins.value.toString()),
-      losses: parseInt(stats.losses.value.toString()),
-      stxWon: parseInt(stats["stx-won"].value.toString()),
-      gamesPlayed: parseInt(stats["games-played"].value.toString()),
-    };
-  });
+    return responseCV.value.map((statsCV: TupleCV<{
+      wins: UIntCV;
+      losses: UIntCV;
+      "stx-won": UIntCV;
+      "games-played": UIntCV;
+    }>) => {
+      const stats = statsCV.value;
+      return {
+        wins: parseInt(stats.wins.value.toString()),
+        losses: parseInt(stats.losses.value.toString()),
+        stxWon: parseInt(stats["stx-won"].value.toString()),
+        gamesPlayed: parseInt(stats["games-played"].value.toString()),
+      };
+    });
+  } catch (error) {
+    console.error('Error fetching all player stats:', error);
+    throw new Error('Failed to fetch all player stats');
+  }
 }
