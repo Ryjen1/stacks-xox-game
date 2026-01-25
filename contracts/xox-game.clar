@@ -37,10 +37,14 @@
         finished: bool,
         last-move-block-height: uint,
         ;; moves: list of all moves made in the game as {move-index, move} tuples
-        moves: (list 9 {move-index: uint, move: uint})
+        moves: (list 9 {move-index: uint, move: uint}),
+        is-ai-game: bool
     }
 )
 
+;; Creates a new game with the specified bet amount and initial move by the creator (X).
+;; The creator places their first move and the contract holds the bet amount.
+;; Returns the new game ID on success.
 (define-public (create-game (bet-amount uint) (move-index uint) (move uint))
     (let (
         ;; Get the Game ID to use for creation of this new game
@@ -83,6 +87,9 @@
     (ok game-id)
 ))
 
+;; Joins an existing game by providing the game ID and the second player's initial move (O).
+;; The second player places their first move and the contract holds the bet amount.
+;; Returns the game ID on success.
 (define-public (join-game (game-id uint) (move-index uint) (move uint))
     (let (
         ;; Load the game data for the game being joined, throw an error if Game ID is invalid
@@ -122,6 +129,9 @@
     (ok game-id)
 ))
 
+;; Allows a player to claim a win if their opponent has not made a move within the timeout period.
+;; Transfers all bets to the claimant and updates player statistics.
+;; Returns the game ID on success.
 (define-public (claim-timeout (game-id uint))
     (let (
         ;; Load the game data for the game being claimed, throw an error if Game ID is invalid
@@ -159,6 +169,9 @@
     (ok game-id)
 ))
 
+;; Makes a move in an ongoing game by placing the player's mark (X or O) at the specified position.
+;; Handles win, loss, or draw conditions, updates player statistics, and distributes payouts.
+;; Returns the game ID on success.
 (define-public (play (game-id uint) (move-index uint) (move uint))
     (let (
         ;; Load the game data for the game being joined, throw an error if Game ID is invalid
@@ -229,20 +242,22 @@
     (ok game-id)
 ))
 
+;; Retrieves the details of a specific game by its ID.
 (define-read-only (get-game (game-id uint))
     (map-get? games game-id)
 )
 
+;; Retrieves the ID of the most recently created game.
 (define-read-only (get-latest-game-id)
     (var-get latest-game-id)
 )
 
-;; Get player statistics
+;; Retrieves the statistics for a specific player.
 (define-read-only (get-player-stats (player principal))
     (map-get? player-stats player)
 )
 
-;; Get all player statistics (for leaderboard)
+;; Retrieves statistics for all players, used for leaderboard functionality.
 (define-read-only (get-all-player-stats)
     (map-values player-stats)
 )

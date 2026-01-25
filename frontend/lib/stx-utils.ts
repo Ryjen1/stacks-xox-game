@@ -28,3 +28,8 @@ export function formatStx(amount: number) {
 export function parseStx(amount: number) {
   return amount * 10 ** 6;
 }
+
+// Format STX amount with proper decimals (6 decimal places)
+export function formatStxWithDecimals(amount: number): string {
+  return (amount / 10 ** 6).toFixed(6);
+}
