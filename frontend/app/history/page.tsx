@@ -2,12 +2,14 @@
 
 import { useState, useEffect } from "react";
 import { getAllGames, Game } from "@/lib/contract";
+import { GameReplay } from "@/components/game-replay";
 
 export default function HistoryPage() {
   const [games, setGames] = useState<Game[]>([]);
   const [filteredGames, setFilteredGames] = useState<Game[]>([]);
   const [playerFilter, setPlayerFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [showReplay, setShowReplay] = useState<Record<number, boolean>>({});
   const gamesPerPage = 10;
 
   useEffect(() => {
@@ -44,6 +46,13 @@ export default function HistoryPage() {
 
   const getWinnings = (game: Game) => {
     return game.winner ? game["bet-amount"] * 2 : 0; // No winnings for draws
+  };
+
+  const toggleReplay = (gameId: number) => {
+    setShowReplay(prev => ({
+      ...prev,
+      [gameId]: !prev[gameId]
+    }));
   };
 
   return (
@@ -86,8 +95,15 @@ export default function HistoryPage() {
                     </li>
                   ))}
                 </ul>
+                <button
+                  onClick={() => toggleReplay(game.id)}
+                  className="mt-2 px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600"
+                >
+                  {showReplay[game.id] ? "Hide Replay" : "Show Replay"}
+                </button>
               </div>
             </div>
+            {showReplay[game.id] && <GameReplay game={game} />}
           </div>
         ))}
       </div>
