@@ -17,7 +17,7 @@ export function GameBoard({
 }: GameBoardProps) {
   return (
     <div className="flex flex-col items-center gap-2">
-      <div className="grid grid-cols-3 gap-1 sm:gap-2">
+      <div className="grid grid-cols-3 gap-1 sm:gap-2" role="grid" aria-label="Tic-tac-toe game board">
         {board.map((cell, index) => (
           <div
             key={index}
@@ -26,6 +26,15 @@ export function GameBoard({
               cellClassName
             }
             onClick={() => onCellClick?.(index)}
+            role="gridcell"
+            aria-label={`Cell ${index + 1}: ${cell === Move.EMPTY ? 'empty' : cell === Move.X ? 'X' : 'O'}`}
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onCellClick?.(index);
+              }
+            }}
           >
             {cell === Move.EMPTY ? (
               <span className="hidden group-hover:block text-gray-500">
